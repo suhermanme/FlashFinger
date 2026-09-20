@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlashFinger</title>
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <script>
+      // Tiny first-paint theme hint (docs/DESIGN_SPECIFICATION.md §6.1).
+      // Authoritative settings hydrate later; this only avoids a bright flash.
+      try {
+        var hint = localStorage.getItem('ff.themeHint');
+        if (hint === 'light' || hint === 'dark') {
+          document.documentElement.setAttribute('data-ff-theme', hint);
+        }
+      } catch (e) {
+        /* hint unavailable: boot still succeeds */
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>FlashFinger requires JavaScript. All processing is local and offline.</noscript>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
