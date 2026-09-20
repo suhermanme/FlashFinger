@@ -2,10 +2,10 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "lib": ["ES2022"],
-    "types": ["node"],
-    "outDir": "dist/electron",
+    "types": ["node", "electron"],
+    "outDir": "dist",
     "noEmit": false
   },
   "include": ["electron"]

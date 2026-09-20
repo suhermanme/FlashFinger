@@ -64,6 +64,8 @@ export interface PlatformAdapter {
 // ---------------------------------------------------------------------------
 
 export const IPC_PROTOCOL_VERSION = 1;
+/** The only raw Electron invoke channel exposed by preload. */
+export const FF_INVOKE_TRANSPORT = 'flashfinger:invoke' as const;
 export const FF_BRIDGE_GLOBAL = '__flashfingerBridge__' as const;
 
 /** Channels are closed whitelisted names; payload validation is per-channel

@@ -1,7 +1,49 @@
-node_modules/
-dist/
-release/
-coverage/
+# Dependencies
+/node_modules/
+
+# Generated application and package output
+/dist/
+/release/
+
+# Tests, coverage, and reports
+/coverage/
+/.nyc_output/
+/playwright-report/
+/test-results/
+
+# Tool caches and temporary workspace data
+/.cache/
+/.tmp/
+/.vite/
+/.vitest/
+/.memory/
+*.tsbuildinfo
+.eslintcache
+
+# Local agent/workspace metadata
+/.agents/
+/.codex/
+
+# Local environment and secrets; keep documented examples
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
 *.log
-.tmp/
-.memory/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and OS metadata
+/.idea/
+/.vscode/
+/.fleet/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "dist/electron/main.js",
   "description": "Offline-first, cross-platform typing trainer",
   "engines": { "node": ">=20" },
   "scripts": {
@@ -10,7 +11,7 @@
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.electron.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "electron:compile": "tsc -p tsconfig.electron.json && node -e \"const fs=require('fs');fs.mkdirSync('dist/electron',{recursive:true});fs.writeFileSync('dist/electron/package.json',JSON.stringify({type:'commonjs'}))\"",
+    "electron:compile": "tsc -p tsconfig.electron.json && node -e \"const fs=require('fs');fs.mkdirSync('dist/electron',{recursive:true});fs.writeFileSync('dist/package.json',JSON.stringify({type:'commonjs'}));fs.writeFileSync('dist/electron/package.json',JSON.stringify({type:'commonjs'}))\"",
     "electron:dev": "npm run build && npm run electron:compile && electron dist/electron/main.js",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",

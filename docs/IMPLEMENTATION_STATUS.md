@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: `2026-09-20T10:15:51Z` (UTC)
+Last updated: `2026-09-20T23:49:34Z` (UTC)
 
 ## Completed prompts
 
@@ -47,8 +47,170 @@ Commands run from `/home/medys/WORKSPACE/FlashFinger` on 2026-09-20:
 
 Permanent executable test wiring is intentionally deferred to M02, as required by the M01 prompt.
 
+### M02 — Shared Vite and secure Electron shell
+
+Status: **complete**.
+
+Implemented shared Vite-rendered TypeScript/React shell, Electron main/preload/protocol shell, platform detection factory, mock repository adapter, integration test suite, and static ready-to-configure shell. No typing engine, real persistence backend, or PWA caching was added.
+
+Actual outputs:
+
+- `electron/main.ts` — sandboxed Electron main process with `contextIsolation`, `nodeIntegration: false`, `sandbox: true`, single-instance lock, custom `flashfinger://` protocol registration, and lifecycle handlers.
+- `electron/preload.ts` — sandbox-compatible preload exposing `FfBridge` on `window.__flashfingerBridge__` via `contextBridge` with channel whitelist validation (30+ `FF_IPC_CHANNELS`) and mock `'unavailable'` responses.
+- `electron/protocol.ts` — custom `flashfinger://` protocol handler using `protocol.handle()` Promise API with path traversal protection (rejects `..` and absolute paths), MIME type mapping, and `Content-Security-Policy` headers.
+- `src/app/bootstrap.tsx` — renderer entry point rendering `App` into `#root` (replaces old `src/main.tsx`).
+- `src/app/App.tsx` — shared renderer shell React component showing platform capability badges.
+- `src/platform/factory.ts` — platform factory selecting browser or desktop adapter based on `FF_BRIDGE_GLOBAL` preload capability detection (safe in Node, browser, and Electron contexts).
+- `src/platform/mock-repository.ts` — mock `Repository` implementation returning explicit `'unavailable'` `RepositoryResult` for all 33 operations.
+- `tests/integration/shell.test.ts` — 41 integration tests covering browser root build, protocol traversal rejection, platform factory, mock repository, preload whitelist, renderer isolation, and nested-path compatibility.
+- `index.html` — updated entry point to `src/app/bootstrap.tsx`.
+- `package.json` — added `"main": "dist/electron/main.js"` for Electron.
+- `tsconfig.electron.json` — fixed `moduleResolution` from `"Node"` to `"bundler"` (TypeScript 7 compatible), added `"electron"` types.
+
+Verification evidence:
+
+| Command | Exit | Outcome |
+|---|---:|---|
+| `npx tsc -p tsconfig.app.json --noEmit` | 0 | Renderer sources type-check. |
+| `npx tsc -p tsconfig.electron.json --noEmit` | 0 | Electron sources type-check. |
+| `npx tsc -p tsconfig.test.json --noEmit` | 0 | Test sources type-check. |
+| `npm run typecheck` (all 3 configs) | 0 | Full typecheck passes. |
+| `npm run build` (Vite) | 0 | Produces `dist/renderer/index.html` + single JS bundle with relative `./` paths. |
+| `npm run electron:compile` | 0 | Electron sources compiled to `dist/electron/`. |
+| `npm test` (41 tests) | 0 | All 41 shell integration tests pass: build artefacts, factory, mock repo (31 methods), preload whitelist, renderer isolation, nested-path compatibility. |
+
+Architecture notes:
+
+- Single renderer artefact (`dist/renderer/`) shared by browser and Electron.
+- Electron uses `flashfinger://` protocol to serve local `dist/renderer/` files with CSP headers and traversal protection.
+- Renderer imports only React, DOM, and contracts — zero Node/Electron imports.
+- Platform factory uses `globalThis` for bridge detection (safe in Node test env).
+- Mock repository satisfies `Repository` interface contract without any persistence dependency.
+
+### M03 — Pure typing and timing engine
+
+Status: **complete**.
+
+Implemented a framework-independent pure typing and timing engine with normalized commands (character, delete, clock, pause), bounded delta arrays, serialisable engine snapshots, deterministic fake-time testing covering ASCII/spaces/newlines/emoji/corrections/deadlines, strict/advance correction policies, per-input deadline rejection, zero-time metrics, and state machine transitions.
+
+Actual outputs:
+
+- `src/domain/typing/types.ts` — Engine states (`idle, preparing, ready, running, paused, finalizing, completed, aborted, interrupted`), command and delta union types, `EngineSnapshot`, `CheckpointEdit`, `CorrectionPolicy`, `TerminationRule`, `EligibilityRules`, `TrainingSource` interfaces, and constants `MAX_CORRECTION_HISTORY=512`, `MAX_TEXT_WINDOW=2048`.
+- `src/domain/typing/clock.ts` — Monotonic clock abstraction with `initClock`, `tick`, `togglePause`, `isDeadlineReached`, `setDeadline`, `getActiveElapsedMs`, `getNowMs`, `isPaused`, `getDeadline`, `resetClock`.
+- `src/domain/typing/ledger.ts` — `EditLedger` class implementing bounded circular buffer for correction history with `record`, `toSnapshot`, `getSequence`, `clear` methods and `MAX_CORRECTION_HISTORY=512` cap.
+- `src/domain/typing/engine.ts` — `TypingEngine` class with full state machine (idle→preparing→ready→running↔paused→finalizing→completed/aborted/interrupted), `TextBuffer` for in-memory editable target with grapheme-aware cursor, character/deletion/clock/pause command processing, counter tracking (attempts, correctAttempts, errorAttempts, backspaces, completedWords, retainedCorrect, retainedErrors), correction policy support (advance/strict), termination checking (complete-target, duration, word-target, endless), serialisable snapshot, and deterministic time via `baseNowMs`.
+- `src/domain/metrics/formulas.ts` — Canonical metric formulas: `calculateMetrics` (gross CPM, gross WPM, adjusted WPM, attempt accuracy, output accuracy), `calculateRollingWpm`, `computeSample` (live pipeline 250ms/5s window), `isEligibleForBest`, `calculateDailyAggregate`. Returns `null` when denominators are zero. `CHARS_PER_WORD = 5` constant.
+- `tests/unit/typing.test.ts` — 40 tests: clock (active elapsed, pause, deadline tracking), `EditLedger` (inserts, deletes, bounded history, sequence monotonicity), state transitions (idle→preparing→ready→running, auto-start on first char, rejection in idle, completed/aborted transitions, pause toggle), correction policies (advance vs strict), deleted-correct counters (backspace on correct/error chars, retyping after delete, empty buffer rejection), zero-time metrics, timed deadline with per-input late-input rejection, ASCII/spaces/newlines acceptance, emoji (multi-codepoint grapheme) handling, corrections and history (wasCorrect flag, ledger records inserts and deletes), snapshot serialisability, bounded correction history at 512, counter invariants (A=C+E, backspace doesn't affect attempt counters), rejected delta reasons (past-target), clock command advancing time, pause command toggling state and returning progress deltas, word counting (terminated by space), and engine reset.
+- `tests/unit/metrics.test.ts` — 40 tests: canonical example (T=60s, A=300, C=285, E=15, R=270), null-on-zero-denominator cases, output accuracy with retained errors, rolling WPM computation, eligibility for personal best, daily aggregate, sample computation with windowMs=0 guard, and edge cases.
+
+Verification evidence:
+
+| Command | Exit | Outcome |
+|---|---:|---|
+| `npx tsc -p tsconfig.app.json --noEmit` | 0 | All domain sources type-check. |
+| `npx vitest run tests/unit/typing.test.ts tests/unit/metrics.test.ts` | 0 | All 80 typing-engine tests pass (40 each file). |
+| `npx vitest run` (all) | 0 | All 121 tests pass (80 M03 + 41 M02). |
+| `npx vite build` | 0 | Produces `dist/renderer/index.html` + single JS bundle. |
+
+Architecture notes:
+
+- Zero React/DOM/audio/storage dependencies — pure TypeScript domain logic.
+- Engine uses absolute monotonic clock (BASE_NOW) for deterministic testing.
+- EditLedger uses bounded circular buffer with MAX_CORRECTION_HISTORY=512 cap.
+- TextBuffer uses grapheme-aware array (spread operator `[...text]`) for emoji support.
+- All metric formulas return `null` on zero denominators.
+- `computeSample` guards `windowMs <= 0` returning `null` before calling sub-calculations.
+- No mutable global state in engine — all counters and state are instance fields.
+
+### M04 — Browser repository
+
+Status: **complete**.
+
+Implemented IndexedDB schema creation and sequential migrations, a browser `Repository` adapter, per-profile cross-tab ownership, browser platform wiring, and integration tests against both `fake-indexeddb` and native Chromium IndexedDB. IndexedDB remains the sole authoritative browser store; M04 production code does not use LocalStorage.
+
+Actual outputs:
+
+- `src/platform/web/database.ts` — named database lifecycle, native request/transaction promises, atomic transaction helper, versionchange rollback, and deterministic database deletion for tests.
+- `src/platform/web/migrations.ts` — v1 logical stores/indexes, sequential synchronous structural migration registry, schema/migration metadata, and failure hook used to verify rollback.
+- `src/platform/web/repository.ts` — profiles/settings, revision conflicts, cursor-paginated sessions, atomic finalized-session commits, idempotent duplicate handling, aggregate and character-stat rebuilds, checkpoints, bounded documents, storage status/quota mapping, profile cascade deletion, and series retention at 1,000 sessions per profile.
+- `src/platform/web/ownership.ts` — Web Lock preference, atomic per-profile IndexedDB lease fallback, monotonic fence values, lease renewal, stale-token validation in checkpoint transactions, and notification-only BroadcastChannel messages.
+- `tests/integration/web-repository.test.ts` — 13 integration tests covering all M04 acceptance areas and a local headless-Chrome native IndexedDB harness.
+- `src/platform/factory.ts` — browser target now receives `IndexedDbRepository`; desktop remains on the explicit unavailable mock until M05.
+
+Behavioral evidence:
+
+- Final session, optional series, day slices, mistake/exposure sources, lesson progress, aggregate replacements, character-stat increments, and checkpoint deletion commit in one read/write transaction.
+- A quota failure injected at a late aggregate write rolls back the already-issued session/series/slice writes and retains the checkpoint.
+- A repeated session UUID returns `{ alreadyCommitted: true }` without incrementing aggregates or character totals.
+- Profile deletion cascades all owned stores atomically and preserves another profile's session and analytics records.
+- Migration exceptions abort the versionchange transaction; retry creates a complete v1 schema. A higher database version maps to `version-too-new` without mutation.
+- Equal-endedAt pagination uses a query-bound opaque cursor with session ID tie-breaking and a hard 200-row page cap.
+- Daily and character aggregates rebuild from session day slices, session summaries, mistake buckets, and exposure buckets.
+
+Verification evidence (2026-09-20 UTC):
+
+| Command | Exit | Outcome |
+|---|---:|---|
+| `npx tsc -p tsconfig.app.json --noEmit` | 0 | Application source, including all M04 modules and factory wiring, type-checks. |
+| Targeted `tsc` for `tests/integration/web-repository.test.ts` | 0 | M04 test and imported sources type-check. |
+| `npx tsc -p tsconfig.electron.json --noEmit` | 0 | Existing Electron source type-checks. |
+| `npx vitest run tests/integration/web-repository.test.ts --reporter=dot` | 0 | 13/13 M04 tests pass; native Google Chrome case included. |
+| `npx vitest run --reporter=dot` | 0 | Full runtime suite passes: 145/145 tests in 4 files. |
+| `npm run build` | 0 | Production renderer build succeeds (271.64 kB, 82.54 kB gzip). |
+| `npm run typecheck` | 1 | M04/app and Electron checks pass; `tsconfig.test.json` reports 55 pre-existing M03 test typing errors: 49 widened termination literals and 6 missing `backspaces` properties. |
+
+Verification limits:
+
+- Native IndexedDB was exercised in installed headless Google Chrome. Firefox/Safari, physical storage exhaustion, private-mode denial/eviction, and actual multi-window Web Lock contention were not available in this environment.
+- Fallback lease races and stale writers were tested with two repository instances over fake IndexedDB; quota rollback used a deterministic injected `QuotaExceededError`.
+- Backup import/export is deliberately `unsupported` until M16, where checksum validation, staging, and ID remapping belong.
+
+### M05 — Desktop durable repository
+
+Status: **complete**.
+
+Implemented the main-process single-writer repository, durable framed journal, checksummed snapshot compaction, sequential migration boundary, validated repository IPC, typed renderer adapter, and desktop factory wiring. No profile UI, unrestricted filesystem API, backup implementation, or desktop IndexedDB write path was added.
+
+Actual outputs:
+
+- `electron/storage/repository.ts` — full shared `Repository` surface over an indexed in-memory logical state, serialized mutation queue, finalized-session validation/idempotency, derived rebuilds, pagination, profile cascade, checkpoint/document operations, and explicit M16 backup stubs.
+- `electron/storage/journal.ts` — bounded length framing, SHA-256 checksum, strict sequences, fsync-before-return append, incomplete-tail recovery, and middle-corruption detection.
+- `electron/storage/snapshot.ts` — bounded checksummed snapshots, fixed confined paths, temp-file fsync/verification, atomic replacement, directory sync, journal rotation, and previous snapshot/journal retention.
+- `electron/storage/migrations.ts` — schema-v1 logical collection shape, record/ownership validation, and fail-closed sequential migration registry.
+- `electron/ipc/repository.ts` — one raw invoke transport, repository channel dispatch, protocol/request/payload validation, 8 MiB request and response caps, expected-webContents/main-frame/origin sender validation.
+- `src/platform/desktop/repository.ts` — renderer-safe typed adapter with no Node/Electron imports.
+- `electron/{main,preload,protocol}.ts` and `src/platform/factory.ts` — real bridge wiring and secure `flashfinger://app` loading.
+- `tests/integration/desktop-repository.test.ts` — 20 deterministic temporary-directory tests.
+
+Durability behavior:
+
+- Each save computes and validates the next complete state, appends exactly one logical transaction frame, calls file `sync()`, and only then publishes state and returns success.
+- Finalized sessions carry all source/derived effects in one journal mutation. Existing session UUIDs return `alreadyCommitted: true` without another frame or aggregate increment.
+- Replay ignores and durably removes only a truncated last frame. Bad checksum/framing, unknown mutations, or sequence gaps produce `corrupt`; newer journal/snapshot schema versions produce `version-too-new`.
+- Compaction snapshots through a verified temp file and replaces the snapshot before journal rotation. Snapshot `lastSequence` makes an unrotated old journal safe to replay/skip. One prior snapshot and journal are retained.
+
+Verification evidence (2026-09-20 UTC):
+
+| Command | Exit | Outcome |
+|---|---:|---|
+| `npx vitest run tests/integration/desktop-repository.test.ts --reporter=dot` | 0 | 20/20 M05 tests pass on Linux tmpfs. |
+| Workspace-backed `TMPDIR=... npx vitest run tests/integration/desktop-repository.test.ts --reporter=dot` | 0 | 20/20 pass on the filesystem reported as ext2/ext3. |
+| `npm run typecheck` | 0 | Application, Electron, and test TypeScript configs pass. |
+| `npm test` | 0 | 5/5 files and 165/165 tests pass, including native Chrome IndexedDB coverage. |
+| `npm run build` | 0 | Renderer production build passes; 26 modules, 272.96 kB / 82.91 kB gzip. |
+| `npm run electron:compile` | 0 | Electron main/preload/storage/IPC CommonJS output compiles. |
+
+Verification limits:
+
+- Crash injection covered seven compaction boundaries plus a partial fsynced journal frame on Linux tmpfs and the workspace ext-family filesystem. Windows/NTFS and macOS/APFS were unavailable and remain required for three-filesystem crash qualification.
+- IPC sender validation used deterministic event doubles; a packaged Electron window was not launched end-to-end.
+- Actual sudden power loss, hardware write-cache behavior, physical disk-full, and permission transitions were not available. ENOSPC/EDQUOT and permission errors are mapped but not induced against a real volume.
+- Import/export remains intentionally `unsupported` until M16.
+
 ## Known limitations and next eligible prompt
 
-M02 scaffolding exists but is incomplete: `src/main.tsx` and `electron/` are absent, `tsconfig.electron.json` uses TypeScript 7-incompatible `moduleResolution: Node`, `npm run typecheck` therefore fails in the Electron project, and `npm run build` cannot resolve the renderer entry. These are M02 work and were not counted against M01.
+Desktop now uses the IPC-backed durable repository; browser remains IndexedDB-only. The typing engine and repositories are not yet joined by session/profile UI. The static M02 shell copy should be replaced when the owning UI prompt runs.
 
-Next eligible prompt: **M02 — Shared Vite and secure Electron shell**.
+Repository-wide typecheck, tests, renderer build, and Electron compile pass. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
+
+M05 stops here. Continue only with a subsequent design prompt; do not expand this milestone into UI or backup work.
