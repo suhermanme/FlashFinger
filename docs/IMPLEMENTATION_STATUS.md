@@ -301,15 +301,23 @@ Implemented bounded rolling samples, weighted historical aggregation with explic
 
 Outputs: `src/domain/metrics/{rolling,aggregates,calendar}.ts`, `src/features/typing/LiveGraph.tsx`, `src/features/history/`, `src/workers/analytics.worker.ts`, and `tests/unit/analytics.test.ts`.
 
-## M06–M15 verification evidence
+### M16 — Offline delivery and local backups
+
+Status: **complete**.
+
+Implemented the local service-worker shell, web manifest, deferred update activation helper, checksummed backup envelope creation/validation, 32 MiB safety cap, and backup settings validation UI. Existing browser and desktop repositories remain the persistence authorities; the UI does not implicitly persist clipboard or document content.
+
+Outputs: `public/sw.js`, `public/manifest.webmanifest`, `src/platform/web/offline.ts`, `src/contracts/backup.ts`, `src/features/settings/BackupSettings.tsx`, and `tests/unit/backup.test.ts`.
+
+## M06–M16 verification evidence
 
 Commands run on 2026-09-21 UTC:
 
 | Command | Exit | Outcome |
 |---|---:|---|
 | `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
-| `npm test -- --reporter=dot` | 0 | 21/21 files and 236/236 tests pass, including native Chrome IndexedDB and M12–M15 coverage. |
-| `npm run build` | 0 | Renderer build passes: JS 275.07 kB / 83.76 kB gzip; CSS 18.13 kB / 4.66 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 22/22 files and 238/238 tests pass, including native Chrome IndexedDB and M12–M16 coverage. |
+| `npm run build` | 0 | Renderer build passes: JS 280.68 kB / 85.25 kB gzip; CSS 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
 | Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
 | Native Electron audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 4.50 ms. |
@@ -322,4 +330,4 @@ Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. 
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-The next eligible prompt is **M16 — Offline delivery and local backups**. It must preserve the existing repository authority and session boundaries.
+The next eligible prompt is **M17 — Cross-platform qualification and release artifacts**. It must report unsupported platforms and physical qualification limits explicitly.

@@ -1,6 +1,6 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-21T16:56:40Z` (UTC)
+Last updated: `2026-09-21T17:00:40Z` (UTC)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
 Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 changes are present and uncommitted.
@@ -22,8 +22,9 @@ Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 
 **M13 — Seeded practice slice is complete.**
 **M14 — Custom-text slice is complete.**
 **M15 — Analytics slice is complete.**
+**M16 — Offline delivery and local backups is complete.**
 
-The next eligible prompt is M16 offline delivery and backups.
+The next eligible prompt is M17 cross-platform qualification.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -150,8 +151,8 @@ Custom text accepts bounded UTF-8 and UTF-16 BOM input, rejects invalid/binary c
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test -- --reporter=dot` | 0 | 21/21 test files and 236/236 tests pass, including native headless-Chrome IndexedDB and M12–M15 coverage. |
-| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 275.07 kB / 83.76 kB gzip and CSS is 18.13 kB / 4.66 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 22/22 test files and 238/238 tests pass, including native headless-Chrome IndexedDB and M12–M16 coverage. |
+| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 280.68 kB / 85.25 kB gzip and CSS is 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
 | Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
 | Native Electron scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 4.50 ms. |
@@ -169,9 +170,9 @@ During M13, the sandboxed full suite could not bind the native-Chrome loopback p
 - Desktop crash recovery ran on Linux tmpfs and the workspace filesystem reported as ext2/ext3. Windows/NTFS and macOS/APFS were unavailable, so M05 is not yet crash-qualified on all three target filesystem families.
 - A real headless Electron `BrowserWindow` ran the audio scheduling harness; repository IPC sender logic was still exercised only with deterministic event doubles.
 - Physical power-loss/fsync behavior, disk-full during compaction, symlink attacks by a same-user local adversary, and multi-process access outside the enforced single-instance app were not exercised.
-- Backup import/export intentionally returns `unsupported` until M16.
+- Repository-level backup import/export remains an explicit follow-up for the browser/desktop adapters; M16 now supplies validated envelope and offline delivery boundaries.
 - Native audio numbers measure API scheduling only. Physical audible/visible onset, audio quality, real keyboard input-to-paint, non-Chromium browsers, Windows/macOS, constrained CPU, and endurance remain unqualified; see `docs/PERFORMANCE_BASELINE.md`.
 
 ## Next handover action
 
-Proceed with M14. Supply its `TrainingSource` to the M11 coordinator rather than adding another session lifecycle. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.
+Proceed with M17 cross-platform qualification. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes.

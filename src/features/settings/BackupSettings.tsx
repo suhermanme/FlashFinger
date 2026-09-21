@@ -1,0 +1,4 @@
+import { useState } from 'react';
+import { Button } from '../../components/Button.js';
+import { validateAndParseBackup } from '../../contracts/backup.js';
+export function BackupSettings() { const [message, setMessage] = useState(''); const importFile = async (file?: File) => { if (!file) return; try { await validateAndParseBackup(new Uint8Array(await file.arrayBuffer())); setMessage('Backup validated and ready to import.'); } catch (error) { setMessage(error instanceof Error ? error.message : 'Backup could not be validated.'); } }; return <section className="ff-card" aria-labelledby="backup-heading"><h2 id="backup-heading">Backups</h2><label>Import backup <input type="file" accept="application/json,.json" onChange={(event) => void importFile(event.target.files?.[0])} /></label><Button type="button" onClick={() => setMessage('Export is available through the active repository.')}>Export backup</Button>{message ? <p role="status">{message}</p> : null}</section>; }

@@ -1,0 +1,3 @@
+export interface OfflineStatus { supported: boolean; registered: boolean; updateAvailable: boolean; }
+export async function registerOfflineWorker(path = './sw.js'): Promise<OfflineStatus> { if (!('serviceWorker' in navigator)) return { supported: false, registered: false, updateAvailable: false }; const registration = await navigator.serviceWorker.register(path, { scope: './' }); return { supported: true, registered: true, updateAvailable: Boolean(registration.waiting) }; }
+export function deferWorkerUpdate(registration: ServiceWorkerRegistration, activeTyping: boolean): void { if (!activeTyping) registration.waiting?.postMessage({ type: 'SKIP_WAITING' }); }

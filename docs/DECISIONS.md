@@ -238,3 +238,7 @@ Custom text is decoded and normalized before a typing source is constructed. The
 ## D-027 — Keep analytics derived, bounded, and worker-ready
 
 Live metrics retain only a bounded rolling point window and historical dashboards derive from session records with explicit mode filters. Calendar ranges are materialized as fixed daily buckets, including sparse and zero-activity days; the Canvas graph has an accessible textual equivalent. Analytics preparation is pure and exposed through a worker boundary, so input handling does not depend on chart rendering.
+
+## D-028 — Stage offline updates and validate backups before repository import
+
+The service worker uses local shell caching and only activates a waiting update when the app is not in an active typing session. Backup envelopes are size-capped, schema-validated, canonicalized, and SHA-256 checked before any repository import call. The UI validates files but does not write them or clipboard text implicitly; repository adapters remain the sole persistence authorities.

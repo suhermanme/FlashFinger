@@ -2,10 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { getPlatformAdapter } from '../platform/factory.js';
 import { Navigation } from '../components/Navigation.js';
 import { CustomTextSetup } from '../features/custom-text/index.js';
+import { registerOfflineWorker } from '../platform/web/offline.js';
+import { BackupSettings } from '../features/settings/BackupSettings.js';
 
 export function App(): ReactNode {
   const [adapter, setAdapter] = useState<ReturnType<typeof getPlatformAdapter> | null>(null);
-  useEffect(() => { setAdapter(getPlatformAdapter()); }, []);
+  useEffect(() => { setAdapter(getPlatformAdapter()); if (import.meta.env.PROD) void registerOfflineWorker(); }, []);
   return <>
     <a className="ff-skip-link" href="#main-content">Skip to main content</a>
     <div className="ff-shell">
@@ -28,6 +30,7 @@ export function App(): ReactNode {
         <section id="custom" aria-labelledby="custom-text-shell-heading">
           <CustomTextSetup onStart={() => { /* M15 supplies the shared coordinator handoff. */ }} />
         </section>
+        <BackupSettings />
       </main>
     </div>
   </>;
