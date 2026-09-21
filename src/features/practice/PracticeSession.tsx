@@ -56,6 +56,8 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   const attempts = useRef(0);
   const correctAttempts = useRef(0);
   const errorAttempts = useRef(0);
+  const accuracyAttempts = useRef(0);
+  const accuracyCorrectAttempts = useRef(0);
   const backspaces = useRef(0);
   const exposures = useRef(new Map<string, { attempts: number; errors: number }>());
   const mistakes = useRef(new Map<string, { expected: string; attempted: string; count: number }>());
@@ -69,7 +71,7 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   const finishedByTarget = typed.length >= target.length;
   const done = finishedByTarget || finishedByTime;
   const correct = typed.reduce((total, char, index) => total + Number(char === target[index]), 0);
-  const accuracy = typed.length ? Math.round(100 * correct / typed.length) : 100;
+  const accuracy = accuracyAttempts.current ? Math.round(100 * accuracyCorrectAttempts.current / accuracyAttempts.current) : 100;
   const wpm = elapsedMs >= 1_000 ? Math.round(correct / 5 / (elapsedMs / 60_000)) : 0;
   const progressRatio = durationMs !== null ? Math.min(1, elapsedMs / durationMs) : Math.min(1, typed.length / Math.max(1, target.length));
   const paceDelta = wpm - paceGuideWpm;
@@ -143,19 +145,24 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
         const expected = target[index] ?? '';
         const attempted = nextTyped[index];
         const correctAttempt = attempted === expected;
+        const isCorrection = blockedAttempt !== null && index === typed.length && correctAttempt;
         attemptedKey = attempted;
         attempts.current += 1;
         if (correctAttempt) correctAttempts.current += 1;
         else errorAttempts.current += 1;
-        const exposure = exposures.current.get(expected) ?? { attempts: 0, errors: 0 };
-        exposure.attempts += 1;
-        if (!correctAttempt) exposure.errors += 1;
-        exposures.current.set(expected, exposure);
-        if (!correctAttempt) {
-          const key = `${expected}\u0000${attempted}`;
-          const mistake = mistakes.current.get(key) ?? { expected, attempted, count: 0 };
-          mistake.count += 1;
-          mistakes.current.set(key, mistake);
+        if (!isCorrection) {
+          accuracyAttempts.current += 1;
+          if (correctAttempt) accuracyCorrectAttempts.current += 1;
+          const exposure = exposures.current.get(expected) ?? { attempts: 0, errors: 0 };
+          exposure.attempts += 1;
+          if (!correctAttempt) exposure.errors += 1;
+          exposures.current.set(expected, exposure);
+          if (!correctAttempt) {
+            const key = `${expected}\u0000${attempted}`;
+            const mistake = mistakes.current.get(key) ?? { expected, attempted, count: 0 };
+            mistake.count += 1;
+            mistakes.current.set(key, mistake);
+          }
         }
         if (!correctAttempt) {
           incorrectAttempt = true;
@@ -163,6 +170,7 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
           break;
         }
         acceptedTyped.push(attempted);
+        if (isCorrection) setBlockedAttempt(null);
       }
       if (!incorrectAttempt) setBlockedAttempt(null);
     } else if (nextTyped.length < typed.length) {
@@ -202,6 +210,8 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
     attempts.current = 0;
     correctAttempts.current = 0;
     errorAttempts.current = 0;
+    accuracyAttempts.current = 0;
+    accuracyCorrectAttempts.current = 0;
     backspaces.current = 0;
     exposures.current.clear();
     mistakes.current.clear();

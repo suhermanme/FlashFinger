@@ -92,6 +92,7 @@ describe('M13 practice flow', () => {
     fireEvent.change(screen.getByLabelText('Typing input'), { target: { value: `${text[0]}${text[1]}` } });
     expect(container.querySelectorAll('.ff-target-correct')).toHaveLength(2);
     expect(container.querySelector('.ff-target-current-error')).toBeNull();
+    expect(screen.getByText('ACCURACY').nextElementSibling?.textContent).toBe('50%');
     expect(container.querySelector('.ff-practice-input')).toBeNull();
   });
 
@@ -105,6 +106,22 @@ describe('M13 practice flow', () => {
 
     await waitFor(() => expect(onComplete).toHaveBeenCalledOnce());
     expect(completion).toMatchObject({ attempts: Array.from(text).length, errorAttempts: 0, retainedErrors: 0, completedWords: 25 });
+    expect(await screen.findByText('Saved to Ada.')).toBeTruthy();
+  });
+
+  it('keeps persisted totals valid when a wrong key is corrected', async () => {
+    const prepared = preparePractice(manifest, baseConfig);
+    const text = targetText(prepared);
+    let completion: PracticeResultSummary | null = null;
+    const onComplete = vi.fn(async (result: PracticeResultSummary) => { completion = result; return true; });
+    render(<PracticeSession prepared={prepared} onExit={() => undefined} soundEnabled={false} profileName="Ada" onComplete={onComplete} />);
+    const input = screen.getByLabelText('Typing input');
+    fireEvent.change(input, { target: { value: `${text[0]}x` } });
+    fireEvent.change(input, { target: { value: `${text[0]}${text[1]}` } });
+    fireEvent.change(input, { target: { value: text } });
+
+    await waitFor(() => expect(onComplete).toHaveBeenCalledOnce());
+    expect(completion).toMatchObject({ attempts: text.length + 1, correctAttempts: text.length, errorAttempts: 1, retainedCorrect: text.length, retainedErrors: 0 });
     expect(await screen.findByText('Saved to Ada.')).toBeTruthy();
   });
 

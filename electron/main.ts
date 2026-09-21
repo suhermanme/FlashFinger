@@ -6,7 +6,7 @@
  * renderer artifact from dist/renderer/.
  */
 
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import * as path from 'node:path';
 import { registerProtocol } from './protocol.js';
 import { DesktopRepository } from './storage/repository.js';
@@ -20,8 +20,11 @@ let mainWindow: BrowserWindow | null = null;
 
 function createWindow (): void {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1360,
+    height: 1000,
+    minWidth: 1024,
+    minHeight: 760,
+    autoHideMenuBar: true,
     webPreferences: {
       // Security: disable Node integration entirely.
       nodeIntegration: false,
@@ -33,6 +36,9 @@ function createWindow (): void {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+  // FlashFinger provides its own in-app controls; do not show File/View/etc.
+  mainWindow.setMenu(null);
+  mainWindow.setMenuBarVisibility(false);
 
   // Load the shared Vite renderer output through the confined app protocol.
   mainWindow.loadURL('flashfinger://app/index.html');
@@ -59,6 +65,8 @@ if (!gotLock) {
 }
 
 app.whenReady().then(() => {
+  // Remove the native application menu before any window is created.
+  Menu.setApplicationMenu(null);
   const repository = new DesktopRepository({
     rootDirectory: path.join(app.getPath('userData'), 'repository'),
   });
