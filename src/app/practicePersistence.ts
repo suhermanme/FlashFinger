@@ -1,7 +1,8 @@
 import type { CharacterExposure, MistakeBucket, Profile, SessionRecord } from '../contracts/models.js';
-import { ok, type Repository, type RepositoryResult } from '../contracts/repository.js';
+import { ok, type Repository, type RepositoryResult, type SessionCommit } from '../contracts/repository.js';
 import { calculateMetrics, isEligibleForBest } from '../domain/metrics/formulas.js';
 import { buildDaySlices, calendarDayAt, mergeDailyAggregate, nextCalendarDay } from '../domain/metrics/sessionSummary.js';
+import { deriveLessonProgress, evaluateLessonSession } from '../domain/training/progression.js';
 import type { PreparedPractice } from '../domain/training/practice.js';
 
 export interface PracticeResultSummary {
@@ -72,11 +73,39 @@ export async function persistPracticeResult(
     && row.metricVersion === prepared.sessionConfig.metricVersion);
   const exposures: CharacterExposure[] = result.exposures.map((item) => ({ ...item, profileId: profile.id, sessionId }));
   const mistakes: MistakeBucket[] = result.mistakes.map((item) => ({ ...item, profileId: profile.id, sessionId }));
+  let lessonProgress: SessionCommit['lessonProgress'];
+  const evaluator = prepared.source.progressEvaluator;
+  if (evaluator) {
+    const existing = await repository.getLessonProgress(profile.id, prepared.sessionConfig.contentVersion);
+    if (!existing.ok) return existing;
+    const recent: SessionRecord[] = [];
+    let cursor: string | null = null;
+    do {
+      const page = await repository.querySessions({ profileId: profile.id, mode: 'lessons', includeIneligible: true, limit: 200, cursor });
+      if (!page.ok) return page;
+      for (const item of page.value.sessions) {
+        if (item.id !== session.id && item.status === 'completed'
+          && item.config.sourceRef === evaluator.lessonId
+          && item.config.contentVersion === session.config.contentVersion) recent.push(item);
+        if (recent.length >= 3) break;
+      }
+      cursor = page.value.nextCursor;
+    } while (recent.length < 3 && cursor !== null);
+    const evaluation = evaluateLessonSession(evaluator.definition, session);
+    lessonProgress = [deriveLessonProgress({
+      definition: evaluator.definition,
+      existing: existing.value.find((item) => item.lessonId === evaluator.lessonId),
+      session,
+      evaluation,
+      recentCompletedSessions: recent,
+    })];
+  }
   const committed = await repository.commitSession({
     session,
     daySlices: slices,
     mistakes,
     exposures,
+    lessonProgress,
     aggregateChanges: [mergeDailyAggregate(prior, session, slices[0])],
     updateProfileCharacterStats: true,
     removeCheckpointId: sessionId,

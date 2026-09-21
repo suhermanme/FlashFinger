@@ -1,6 +1,7 @@
 import type { SessionRecord } from '../../contracts/models.js';
 import type { HistoricalBar } from '../../domain/metrics/aggregates.js';
 import { calculateMetrics } from '../../domain/metrics/formulas.js';
+import type { CharacterStatTotals } from '../../contracts/repository.js';
 
 function durationLabel(milliseconds: number): string {
   if (milliseconds < 60_000) return `${Math.round(milliseconds / 1_000)}s`;
@@ -8,7 +9,7 @@ function durationLabel(milliseconds: number): string {
   return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-export function AnalyticsDashboard({ sessions, bars, loading = false, error = null, hasProfile = true }: { sessions: readonly SessionRecord[]; bars: readonly HistoricalBar[]; loading?: boolean; error?: string | null; hasProfile?: boolean }) {
+export function AnalyticsDashboard({ sessions, bars, characterStats = null, loading = false, error = null, hasProfile = true }: { sessions: readonly SessionRecord[]; bars: readonly HistoricalBar[]; characterStats?: CharacterStatTotals | null; loading?: boolean; error?: string | null; hasProfile?: boolean }) {
   const totals = sessions.reduce((value, session) => ({
     activeMs: value.activeMs + session.activeMs,
     attempts: value.attempts + session.attempts,
@@ -22,11 +23,14 @@ export function AnalyticsDashboard({ sessions, bars, loading = false, error = nu
   const metrics = calculateMetrics(totals);
   const bestWpm = Math.max(0, ...sessions.map((session) => session.adjustedWpm ?? 0));
   const chartMax = Math.max(1, ...bars.map((bar) => bar.adjustedWpm ?? 0));
+  const offenders = [...(characterStats?.mistakes ?? [])].reduce((map, item) => map.set(item.expected, (map.get(item.expected) ?? 0) + item.count), new Map<string, number>());
+  const topOffenders = [...offenders.entries()].sort((left, right) => right[1] - left[1]).slice(0, 8);
   return <section className="ff-dashboard ff-view-enter" aria-labelledby="analytics-heading">
     <div className="ff-page-heading"><span className="ff-eyebrow">Performance</span><h2 id="analytics-heading">Analytics</h2><p>Your saved sessions, summarized into speed, accuracy, and consistency.</p></div>
     {!hasProfile ? <div className="ff-empty-state"><strong>Select a profile to track progress.</strong><span>Sessions only become history when they belong to a local profile.</span></div> : loading ? <p role="status">Loading analytics…</p> : error ? <p className="ff-file-error" role="alert">{error}</p> : sessions.length === 0 ? <div className="ff-empty-state"><strong>No completed sessions yet.</strong><span>Finish a practice or lesson and your trends will appear here.</span></div> : <>
       <div className="ff-stat-grid"><article><small>AVERAGE WPM</small><strong>{metrics.adjustedWpm?.toFixed(1) ?? '—'}</strong></article><article><small>ACCURACY</small><strong>{metrics.accuracy?.toFixed(1) ?? '—'}%</strong></article><article><small>ACTIVE TIME</small><strong>{durationLabel(totals.activeMs)}</strong></article><article><small>BEST WPM</small><strong>{bestWpm.toFixed(1)}</strong></article></div>
       <section className="ff-trend-card" aria-labelledby="speed-trend-heading"><div><h3 id="speed-trend-heading">Speed trend</h3><span>Daily adjusted WPM</span></div><div className="ff-trend-chart">{bars.map((bar) => <div key={bar.day} className="ff-trend-column"><span style={{ height: `${Math.max(4, 100 * (bar.adjustedWpm ?? 0) / chartMax)}%` }} title={`${bar.day}: ${bar.adjustedWpm?.toFixed(1) ?? '—'} WPM`} /><small>{bar.day.slice(5)}</small></div>)}</div></section>
+      <section className="ff-trend-card" aria-labelledby="mistake-trend-heading"><div><h3 id="mistake-trend-heading">Characters to review</h3><span>Most frequent expected characters in mistakes</span></div>{topOffenders.length > 0 ? <ol className="ff-mistake-list">{topOffenders.map(([expected, count]) => <li key={expected}><strong>{expected === ' ' ? 'Space' : expected}</strong><span>{count} mistake{count === 1 ? '' : 's'}</span><i style={{ width: `${Math.max(10, 100 * count / topOffenders[0][1])}%` }} /></li>)}</ol> : <p className="ff-muted">No character mistakes recorded yet.</p>}</section>
     </>}
   </section>;
 }

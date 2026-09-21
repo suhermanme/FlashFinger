@@ -9,7 +9,7 @@ import { LessonSelection } from '../features/lessons/LessonSelection.js';
 import { AnalyticsDashboard, HistoryDashboard } from '../features/history/index.js';
 import { loadDictionaryManifest } from '../domain/training/dictionary.js';
 import { preparePractice, type PreparedPractice } from '../domain/training/practice.js';
-import type { PracticeConfig, SessionRecord } from '../contracts/models.js';
+import type { LessonProgress, PracticeConfig, SessionRecord } from '../contracts/models.js';
 import { prepareCustomTextBytes, toCustomTextSource } from '../domain/training/customText.js';
 import { createLessonSessionConfig, createLessonSource, loadCurriculumAsset, type LessonCatalog } from '../domain/training/lessons.js';
 import { buildLessonAvailability } from '../domain/training/progression.js';
@@ -25,6 +25,7 @@ import { createRuntimeStore } from '../state/runtime.js';
 import type { ProfileSettings } from '../contracts/models.js';
 import { KEYBOARD_SOUND_PROFILES, KeyboardSoundPlayer, type KeyboardSoundProfile } from '../engines/audio/keyboardSynth.js';
 import { persistPracticeResult, type PracticeResultSummary } from './practicePersistence.js';
+import type { CharacterStatTotals } from '../contracts/repository.js';
 
 type View = 'practice' | 'lessons' | 'history' | 'analytics' | 'profiles' | 'settings';
 type PaceGuideMode = 'target' | 'average' | 'best';
@@ -54,6 +55,8 @@ export function App(): ReactNode {
   const [soundProfile, setSoundProfile] = useState<KeyboardSoundProfile>('clicky');
   const [soundVolume, setSoundVolume] = useState(.8);
   const [historySessions, setHistorySessions] = useState<SessionRecord[]>([]);
+  const [characterStats, setCharacterStats] = useState<CharacterStatTotals | null>(null);
+  const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>([]);
   const [historyState, setHistoryState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyRevision, setHistoryRevision] = useState(0);
@@ -89,6 +92,26 @@ export function App(): ReactNode {
     })();
     return () => { cancelled = true; };
   }, [activeProfileId, historyRevision, profileSystem]);
+  useEffect(() => {
+    if (!activeProfileId) { setCharacterStats(null); return; }
+    let cancelled = false;
+    void profileSystem.repository.getCharacterStats(activeProfileId).then((result) => {
+      if (cancelled) return;
+      if (result.ok) setCharacterStats(result.value);
+      else setCharacterStats(null);
+    });
+    return () => { cancelled = true; };
+  }, [activeProfileId, historyRevision, profileSystem]);
+  useEffect(() => {
+    if (!activeProfileId || !catalog) { setLessonProgress([]); return; }
+    let cancelled = false;
+    void profileSystem.repository.getLessonProgress(activeProfileId, catalog.curriculum.version).then((result) => {
+      if (cancelled) return;
+      if (result.ok) setLessonProgress(result.value);
+      else setLoadError(result.error.message);
+    });
+    return () => { cancelled = true; };
+  }, [activeProfileId, catalog, historyRevision, profileSystem]);
 
   const selectView = (next: View) => { setPractice(null); setPracticeConfig(null); setView(next); setLoadError(null); };
   const startPractice = (prepared: PreparedPractice, config: PracticeConfig) => {
@@ -146,9 +169,9 @@ export function App(): ReactNode {
       {loadError ? <p className="ff-file-error" role="alert">{loadError}</p> : null}
       {practice ? <PracticeSession key={practiceKey} prepared={practice} showKeyboard={showKeyboard} soundEnabled={soundEnabled} soundProfile={soundProfile} soundVolume={soundVolume} paceGuideWpm={paceGuide.wpm} paceGuideLabel={paceGuide.label} profileName={activeProfile?.name ?? null} onComplete={activeProfile ? (result) => savePractice(practice, result) : undefined} onRestart={practiceConfig ? retryPractice : undefined} onExit={() => { setPractice(null); setPracticeConfig(null); setView('practice'); }} /> : null}
       {!practice && view === 'practice' ? manifest ? <PracticeSetup manifest={manifest} initialConfig={defaults} onStart={startPractice} /> : <p role="status">Loading local practice dictionary…</p> : null}
-      {!practice && view === 'lessons' ? catalog ? <LessonSelection lessons={buildLessonAvailability(catalog.curriculum, [])} onSelect={startLesson} /> : <p role="status">Loading lessons…</p> : null}
+      {!practice && view === 'lessons' ? catalog ? <LessonSelection lessons={buildLessonAvailability(catalog.curriculum, lessonProgress)} onSelect={startLesson} /> : <p role="status">Loading lessons…</p> : null}
       {!practice && view === 'history' ? <HistoryDashboard bars={historyBars} calendar={historyCalendar} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} /> : null}
-      {!practice && view === 'analytics' ? <AnalyticsDashboard sessions={historySessions} bars={historyBars} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} /> : null}
+      {!practice && view === 'analytics' ? <AnalyticsDashboard sessions={historySessions} bars={historyBars} characterStats={characterStats} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} /> : null}
       {!practice && view === 'profiles' ? <ProfileManager coordinator={profileSystem.coordinator} profilesStore={profileSystem.stores.profiles} defaultSettings={defaultProfileSettings} /> : null}
       {!practice && view === 'settings' ? <Settings theme={theme} setTheme={setTheme} fontSize={fontSize} setFontSize={setFontSize} showKeyboard={showKeyboard} setShowKeyboard={setShowKeyboard} soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} soundProfile={soundProfile} setSoundProfile={setSoundProfile} soundVolume={soundVolume} setSoundVolume={setSoundVolume} paceGuideMode={paceGuideMode} setPaceGuideMode={setPaceGuideMode} targetWpm={targetWpm} setTargetWpm={setTargetWpm} /> : null}
     </main>
