@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { getPlatformAdapter } from '../platform/factory.js';
 import { Navigation } from '../components/Navigation.js';
+import { CustomTextSetup } from '../features/custom-text/index.js';
 
 export function App(): ReactNode {
   const [adapter, setAdapter] = useState<ReturnType<typeof getPlatformAdapter> | null>(null);
@@ -23,6 +24,9 @@ export function App(): ReactNode {
           <p className="ff-muted">The shared offline renderer and persistence foundations are ready for profile and typing workflows.</p>
           <p><span className="ff-status">{adapter?.target ?? 'loading'}</span>{' '}
             <span className="ff-status">{adapter?.capabilities.persistence ?? 'detecting storage'}</span></p>
+        </section>
+        <section id="custom" aria-labelledby="custom-text-shell-heading">
+          <CustomTextSetup onStart={() => { /* M15 supplies the shared coordinator handoff. */ }} />
         </section>
       </main>
     </div>

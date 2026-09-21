@@ -219,3 +219,18 @@ Lesson content is a validated `ff-curriculum-v1` asset and produces an ordinary 
 Mastery requires two qualifying IDs among the latest three completed attempts but is intentionally sticky after it is earned. Curriculum versions use independent progress keys; old rows are retained, and achievements move forward only through an explicit unchanged-lesson map.
 
 Migration impact: future curriculum versions must declare mappings only for semantically unchanged lessons and persist projected rows without deleting the source version. Changes to qualification gates require a new curriculum version rather than reinterpretation of old attempts.
+
+## D-025 — Keep dictionary generation local, deterministic, and bounded
+
+Date: 2026-09-21
+Status: accepted in M13
+
+The production practice manifest is a checked-in, versioned derivative of the locally installed SCOWL-based Debian wamerican source. A deterministic build script filters lowercase ASCII entries, removes source-cased proper names and an explicit safety exclusion list, assigns disjoint 1,000/4,000/5,000 difficulty pools, records a source SHA-256, and ships the applicable redistribution notice. Runtime never fetches words remotely. The generator receives an explicit seed/state, uses shuffled bags and a bounded recent-word exclusion, and serializes its state for refill.
+
+Endless preparation is a separate bounded controller: 200 initial words, 100-word batches at an 80-word low-water mark, and a 400-word cap. Scheduling/refill failures become recoverable stalls rather than hidden difficulty changes or infinite loops. Empty filters fail before the coordinator can reach ready.
+
+Migration impact: changing source, exclusions, tier counts, or metadata requires a new dictionary manifest version and license/source hash. The current pool has automated safety filtering and source review; human editorial review and stronger empirical frequency bands remain release qualification work.
+
+## D-026 — Prepare custom text as bounded grapheme chunks
+
+Custom text is decoded and normalized before a typing source is constructed. The implementation uses fatal UTF decoding, rejects NUL-containing binary-like files, normalizes CRLF/CR and NFC, and caps output at 500,000 graphemes with 4,096-grapheme chunks. This keeps rendering and correction windows bounded while preserving logical target indices. Paste/file content is never persisted implicitly; callers must explicitly use the existing document repository contract for retention.

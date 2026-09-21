@@ -65,6 +65,11 @@ button, input, select, textarea { font: inherit; }
 .ff-lesson-list p { margin-block: var(--ff-space-1) 0; }
 .ff-criteria-list li { display: grid; gap: var(--ff-space-1); }
 .ff-criteria-list li[data-met="false"] { color: var(--ff-typing-error); }
+.ff-practice-setup { display: grid; gap: var(--ff-space-4); }
+.ff-practice-setup label, .ff-practice-setup fieldset { display: flex; flex-wrap: wrap; gap: var(--ff-space-2); align-items: center; }
+.ff-custom-text-setup { display: grid; gap: var(--ff-space-4); max-width: 48rem; }
+.ff-custom-text-setup textarea { min-height: 12rem; resize: vertical; font: inherit; line-height: 1.5; }
+.ff-custom-text-setup select { min-height: 2.75rem; }
 
 @media (max-width: 40rem) { .ff-shell { padding: var(--ff-space-3); } .ff-card { padding: var(--ff-space-4); } .ff-nav-list { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }

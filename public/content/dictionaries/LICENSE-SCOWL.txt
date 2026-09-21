@@ -1,0 +1,23 @@
+FlashFinger English dictionary source notice
+
+The ff-english-10k-v1 pool is deterministically derived from the SCOWL-based
+Debian wamerican word list. The collective SCOWL work is Copyright 2000-2011
+by Kevin Atkinson and incorporates the source notices described below.
+
+Permission to use, copy, modify, distribute and sell these word lists, the
+associated scripts, the output created from the scripts, and its documentation
+for any purpose is hereby granted without fee, provided that the above
+copyright notice appears in all copies and that both that copyright notice and
+this permission notice appear in supporting documentation. Kevin Atkinson
+makes no representations about the suitability of this array for any purpose.
+It is provided "as is" without express or implied warranty.
+
+SCOWL incorporates public-domain material from Moby Words II, Brian Kelk's UK
+English Wordlist with Frequency Classification, and Alan Beale's 12Dicts,
+along with WordNet material distributed under Princeton University's notice.
+The full source notice used to produce this checked-in derivative is preserved
+in Debian's wamerican package at /usr/share/doc/wamerican/copyright. Upstream:
+https://wordlist.aspell.net/ and https://github.com/en-wl/wordlist.
+
+FlashFinger filtering and metadata are original project work. The build script
+records the exact source SHA-256 in the generated manifest.

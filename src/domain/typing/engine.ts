@@ -509,18 +509,14 @@ export class TypingEngine {
    * whitespace position or at the target end.
    */
   private _countCompletedWords(): void {
-    // Simple heuristic: count whitespace-terminated runs of correct chars
-    // that match dictionary boundaries
-    // For M03, we use the target text's word boundaries
-    const bufferText = this.textBuffer.bufferText;
-    const targetText = this.textBuffer.targetText;
-
-    // Count whitespace-terminated words in the buffer
+    // Count target words only after every grapheme in that word has been
+    // traversed. The final word qualifies at target end without requiring a
+    // trailing delimiter; a partially typed word never increments the count.
     let wordCount = 0;
     let inWord = false;
-
-    for (let i = 0; i < bufferText.length; i++) {
-      const ch = bufferText[i];
+    const cursor = this.textBuffer.cursor;
+    for (let i = 0; i < cursor; i++) {
+      const ch = this.textBuffer.getExpected(i);
       if (ch === ' ' || ch === '\n' || ch === '\t') {
         if (inWord) {
           wordCount++;
@@ -530,10 +526,8 @@ export class TypingEngine {
         inWord = true;
       }
     }
-    // Count trailing word (if buffer ends mid-word, count it too for simplicity)
-    if (inWord) {
-      wordCount++;
-    }
+    const next = this.textBuffer.getExpected(cursor);
+    if (inWord && (cursor >= this.textBuffer.targetLength || next === ' ' || next === '\n' || next === '\t')) wordCount++;
 
     this.completedWords = wordCount;
   }

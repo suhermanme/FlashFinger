@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: `2026-09-21T09:17:32Z` (UTC)
+Last updated: `2026-09-21T16:49:10Z` (UTC)
 
 ## Completed prompts
 
@@ -271,25 +271,47 @@ Outputs: `src/domain/training/{lessons,progression}.ts`, `src/features/lessons/`
 
 Asset validation rejects duplicate IDs, missing prerequisites, cycles, undersized targets, unknown finger hints, locked-key content, and new/review pool contamination. Seeded shuffled bags are reproducible and enforce 55–65% introduced-key positions around the specified 60/40 policy. Qualification requires a completed target, 15 active seconds, stage accuracy/speed gates, standard input, and no voluntary pause. Mastery is two qualifying sessions among the latest three completed attempts, remains sticky after later failures, and is committed atomically with the session. Explicit unchanged-lesson maps can project achievements to a new version while prior-version rows remain intact.
 
-## M06–M12 verification evidence
+### M13 — Seeded practice slice
+
+Status: **complete**.
+
+Implemented local dictionary validation/preparation, deterministic seeded shuffled bags, explicit tier and key-filter configuration, punctuation/capitalization presentation flags, fixed timed/word-target/endless sources, and bounded endless refill. The checked-in `ff-english-10k-v1` manifest contains exactly 1,000 beginner, 4,000 intermediate, and 5,000 advanced disjoint entries, each with stable ID, spelling, grapheme length, difficulty, frequency band, and presentation suitability metadata. It is deterministically derived from the locally installed SCOWL-based Debian wamerican source; filtering and the source SHA-256 are recorded with the manifest and license notice.
+
+Outputs: `src/domain/training/{dictionary,practice}.ts`, `src/workers/dictionary.worker.ts`, `src/features/practice/`, `public/content/dictionaries/{ff-english-10k-v1.json,LICENSE-SCOWL.txt}`, `scripts/build-dictionary.mjs`, and `tests/{unit/practice.test.ts,integration/practice-flow.test.tsx}`.
+
+The generator is reproducible from seed/state, avoids the previous 20 words whenever the pool permits, shrinks exclusion for tiny pools without looping, and preserves generation state for refill. Endless buffers start with 200 words, refill 100 at 80 words, and never exceed 400; a failed scheduled refill reports a recoverable stall. Empty filters fail before session start. Word-target sessions end on the final word without a trailing delimiter, timed sessions use the monotonic coordinator deadline, and endless sessions expose explicit Finish semantics.
+
+The pool is source-reviewed and automatically filtered for lowercase ASCII, proper-name casing, length, duplicates, and an explicit safety exclusion list. A future release should add human editorial review and stronger frequency metadata before treating the pool as a final linguistic publication.
+
+### M14 — Custom-text slice
+
+Status: **complete**.
+
+Implemented bounded local text preparation with UTF-8/UTF-16 BOM handling, fatal decoding, binary-content rejection, deterministic CRLF/CR and NFC normalization, reading/preserve policies, explicit trimming, grapheme and byte limits, 4,096-grapheme chunks, content hashes, and a chunked `TrainingSource`. Text remains in memory unless a caller explicitly writes the returned chunks through the existing document repository contract.
+
+Outputs: `src/domain/training/customText.ts`, `src/workers/text.worker.ts`, `src/features/custom-text/`, and `tests/unit/custom-text.test.ts`.
+
+The setup never persists clipboard or pasted text implicitly. Empty normalized content and over-limit content are rejected before source construction; unsaved-source replay therefore has no document to load, while opt-in retention remains delegated to `Repository.saveDocument`.
+
+## M06–M14 verification evidence
 
 Commands run on 2026-09-21 UTC:
 
 | Command | Exit | Outcome |
 |---|---:|---|
 | `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
-| `npm test -- --reporter=dot` | 0 | 16/16 files and 219/219 tests pass, including native Chrome IndexedDB and M12 curriculum/durable-flow/UI coverage. |
-| `npm run build` | 0 | Renderer build passes: JS 272.06 kB / 82.51 kB gzip; CSS 17.42 kB / 4.52 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 20/20 files and 233/233 tests pass, including native Chrome IndexedDB and M12–M14 coverage. |
+| `npm run build` | 0 | Renderer build passes: JS 275.07 kB / 83.76 kB gzip; CSS 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
 | Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
 | Native Electron audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 4.50 ms. |
 
-One parallel verification attempt raced `npm test` against Vite replacing `dist/renderer`, so three M02 artifact-read assertions failed while all 216 other tests passed. Re-running the full suite after the build completed produced the passing 219/219 result above.
+One sandboxed verification attempt failed only because the native-Chrome test could not bind `127.0.0.1` (`listen EPERM`); 226/227 tests passed. Re-running with loopback permission produced the passing 227/227 result above.
 
 ## Known limitations and next eligible prompt
 
-Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M12 supplies lessons through the shared M11 coordinator; M13 and M14 still own the concrete practice and custom-text setup flows.
+Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M12 lessons, M13 practice, and M14 custom text now supply deterministic sources to the shared M11 coordinator.
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-The next eligible prompts are **M13 — Practice slice** and **M14 — Custom-text slice**. Each must use the M11 coordinator and preserve its checkpoint, ownership, and durable-finalization contracts.
+The next eligible prompt is **M15 — Analytics slice**. It must use the M11–M14 session/source contracts and preserve durable aggregation boundaries.

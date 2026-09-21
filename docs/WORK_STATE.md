@@ -1,9 +1,9 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-21T09:17:32Z` (UTC)
+Last updated: `2026-09-21T16:49:10Z` (UTC)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
-Repository state: M01–M11 are committed (`83b5dbf` is M11); the completed M12 changes are present and uncommitted.
+Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 changes are present and uncommitted.
 
 ## Current status
 
@@ -19,8 +19,10 @@ Repository state: M01–M11 are committed (`83b5dbf` is M11); the completed M12 
 **M10 — Bounded feedback effects is complete.**
 **M11 — Session lifecycle and durable result integration is complete.**
 **M12 — Lessons slice is complete.**
+**M13 — Seeded practice slice is complete.**
+**M14 — Custom-text slice is complete.**
 
-The next eligible prompts are M13 practice and M14 custom text.
+The next eligible prompt is M15 analytics.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -122,13 +124,33 @@ Checkpoint schema v1 lacks exact completed-word and retained-error counters plus
 
 The v1 catalog contains 26 lessons across stages 1–6 (5/2/6/6/5/2). It validates an acyclic prerequisite graph, minimum 120/240-grapheme targets, allowed keys, finger hints, and separated new/review exercise pools. Deterministic generation keeps introduced-key positions within 55–65% of the 60/40 drill target. The shared coordinator evaluates every lesson result with live pause context and includes the replacement progress row in the same idempotent durable commit. Two qualifying sessions among the latest three completed attempts award sticky mastery; old-version rows remain and explicit maps alone project unchanged lessons forward.
 
+## Completed M13 outputs
+
+- Dictionary manifest/parser: `src/domain/training/dictionary.ts`
+- Seeded generator/refill: `src/domain/training/practice.ts`
+- Worker preparation: `src/workers/dictionary.worker.ts`
+- Setup UI: `src/features/practice/`
+- Content/license: `public/content/dictionaries/`, `scripts/build-dictionary.mjs`
+- Tests: `tests/unit/practice.test.ts`, `tests/integration/practice-flow.test.tsx`
+
+The local SCOWL-derived manifest has exact 1,000/4,000/5,000 beginner/intermediate/advanced counts and a recorded source hash. Shuffled bags are seed/state reproducible, avoid 20-word repeats where possible, and handle one- and two-word pools without infinite retries. Endless preparation is bounded at 200 initial, 100 refill, 80 low-water, and 400 maximum words; refill stalls are explicit and recoverable. Timed, word-target, and endless source contracts are generated from one validated `PracticeConfig`.
+
+## Completed M14 outputs
+
+- Parser/normalizer/source: `src/domain/training/customText.ts`
+- Worker boundary: `src/workers/text.worker.ts`
+- Setup/preview: `src/features/custom-text/`
+- Coverage: `tests/unit/custom-text.test.ts`
+
+Custom text accepts bounded UTF-8 and UTF-16 BOM input, rejects invalid/binary content, normalizes line endings and NFC, supports reading/preserve policies, caps normalized input at 500,000 graphemes, and emits grapheme-safe 4,096-sized chunks. Pasted text is session-memory only by default; explicit repository document retention remains opt-in.
+
 ## Last verification
 
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test -- --reporter=dot` | 0 | 16/16 test files and 219/219 tests pass, including native headless-Chrome IndexedDB and M12 curriculum/durable-flow/UI coverage. |
-| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 272.06 kB / 82.51 kB gzip and CSS is 17.42 kB / 4.52 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 20/20 test files and 233/233 tests pass, including native headless-Chrome IndexedDB and M12–M14 coverage. |
+| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 275.07 kB / 83.76 kB gzip and CSS is 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
 | Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
 | Native Electron scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 4.50 ms. |
@@ -137,7 +159,7 @@ The v1 catalog contains 26 lessons across stages 1–6 (5/2/6/6/5/2). It validat
 
 The initial sandboxed `npm test` attempt exited 1 with 144/145 passing because the native-browser test could not bind `127.0.0.1` (`listen EPERM`). Re-running the same full suite with loopback-port permission produced the passing result above. Tests and build emitted the existing non-failing Vite warning that `__dirname` is incompatible with the future native config loader default.
 
-During M12, one parallel verification attempt raced the full suite against Vite replacing `dist/renderer`; three M02 artifact-read tests failed while the other 216 passed. The sequential rerun after build completion passed all 219 tests.
+During M13, the sandboxed full suite could not bind the native-Chrome loopback port; 226/227 tests passed. The loopback-permitted rerun passed all 227 tests.
 
 ## Known verification limits
 
@@ -151,4 +173,4 @@ During M12, one parallel verification attempt raced the full suite against Vite 
 
 ## Next handover action
 
-Proceed with M13 or M14. Supply its `TrainingSource` to the M11 coordinator rather than adding another session lifecycle. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.
+Proceed with M14. Supply its `TrainingSource` to the M11 coordinator rather than adding another session lifecycle. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.
