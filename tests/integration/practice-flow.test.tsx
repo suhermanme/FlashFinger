@@ -79,14 +79,19 @@ describe('M13 practice flow', () => {
     randomUUID.mockRestore();
   });
 
-  it('types directly on the generated passage without a visible input box', () => {
+  it('keeps the cursor on a wrong character until it is corrected', () => {
     const prepared = preparePractice(manifest, baseConfig);
     const { container } = render(<PracticeSession prepared={prepared} onExit={() => undefined} />);
     const text = targetText(prepared);
     fireEvent.change(screen.getByLabelText('Typing input'), { target: { value: `${text[0]}x` } });
     expect(container.querySelectorAll('.ff-target-correct')).toHaveLength(1);
-    expect(container.querySelectorAll('.ff-target-error')).toHaveLength(1);
-    expect(container.querySelector('.ff-target-current')).not.toBeNull();
+    expect(container.querySelectorAll('.ff-target-error')).toHaveLength(0);
+    expect(container.querySelector('.ff-target-current-error')).not.toBeNull();
+    expect(screen.getByRole('status').textContent).toContain(`Expected “${text[1]}” — try again`);
+    expect((screen.getByLabelText('Typing input') as HTMLTextAreaElement).value).toBe(text[0]);
+    fireEvent.change(screen.getByLabelText('Typing input'), { target: { value: `${text[0]}${text[1]}` } });
+    expect(container.querySelectorAll('.ff-target-correct')).toHaveLength(2);
+    expect(container.querySelector('.ff-target-current-error')).toBeNull();
     expect(container.querySelector('.ff-practice-input')).toBeNull();
   });
 

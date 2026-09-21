@@ -86,9 +86,9 @@ export class KeyboardSoundPlayer {
     this.setVolume(volume);
     const context = await this.readyContext();
     if (!context || !this.compressor || this.volume === 0) return;
-    const notes = kind === 'complete' ? [523.25, 659.25, 783.99, 1_046.5] : [220, 146.83];
-    const spacing = kind === 'complete' ? .11 : .065;
-    const duration = kind === 'complete' ? .25 : .09;
+    const notes = kind === 'complete' ? [523.25, 659.25, 783.99, 1_046.5, 1_318.5] : [220, 146.83];
+    const spacing = kind === 'complete' ? .1 : .065;
+    const duration = kind === 'complete' ? .27 : .09;
     notes.forEach((frequency, index) => {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
@@ -97,7 +97,7 @@ export class KeyboardSoundPlayer {
       oscillator.type = kind === 'complete' ? 'sine' : 'triangle';
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(.0001, start);
-      gain.gain.linearRampToValueAtTime(this.volume * (kind === 'mistake' ? .32 : .22), start + .008);
+      gain.gain.linearRampToValueAtTime(this.volume * (kind === 'mistake' ? .32 : .3), start + .008);
       gain.gain.exponentialRampToValueAtTime(.0001, stop);
       oscillator.connect(gain).connect(this.compressor!);
       this.track(oscillator, gain);

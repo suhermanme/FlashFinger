@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import type { PreparedPractice } from '../../domain/training/practice.js';
 import { KeyboardSoundPlayer, type KeyboardSoundProfile } from '../../engines/audio/keyboardSynth.js';
 import type { PracticeResultSummary } from '../../app/practicePersistence.js';
+import { CompletionConfetti } from './CompletionConfetti.js';
 
 function graphemes(value: string): string[] {
   return Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(value), (part) => part.segment);
@@ -41,6 +42,7 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   const [value, setValue] = useState('');
   const [elapsedMs, setElapsedMs] = useState(0);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  const [blockedAttempt, setBlockedAttempt] = useState<{ expected: string; attempted: string } | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLSpanElement>(null);
@@ -133,11 +135,15 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
       startedWallAt.current = Date.now();
     }
     const nextTyped = graphemes(next);
+    let acceptedTyped = typed.slice();
+    let attemptedKey: string | null = null;
+    let incorrectAttempt = false;
     if (nextTyped.length > typed.length) {
       for (let index = typed.length; index < nextTyped.length; index += 1) {
         const expected = target[index] ?? '';
         const attempted = nextTyped[index];
         const correctAttempt = attempted === expected;
+        attemptedKey = attempted;
         attempts.current += 1;
         if (correctAttempt) correctAttempts.current += 1;
         else errorAttempts.current += 1;
@@ -151,24 +157,34 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
           mistake.count += 1;
           mistakes.current.set(key, mistake);
         }
+        if (!correctAttempt) {
+          incorrectAttempt = true;
+          setBlockedAttempt({ expected, attempted });
+          break;
+        }
+        acceptedTyped.push(attempted);
       }
-    } else if (nextTyped.length < typed.length) backspaces.current += typed.length - nextTyped.length;
+      if (!incorrectAttempt) setBlockedAttempt(null);
+    } else if (nextTyped.length < typed.length) {
+      acceptedTyped = nextTyped;
+      backspaces.current += typed.length - nextTyped.length;
+      setBlockedAttempt(null);
+    }
     if (soundEnabled && nextTyped.length > typed.length) {
-      const index = nextTyped.length - 1;
-      const incorrect = nextTyped[index] !== target[index];
+      const incorrect = incorrectAttempt;
       suppressReleaseSound.current = incorrect;
       const player = soundPlayer.current ??= new KeyboardSoundPlayer();
       if (incorrect) void player.playFeedback('mistake', soundVolume);
-      else void player.playKey(nextTyped[index] === ' ' ? 'space' : 'letter', 'down', soundProfile, soundVolume);
+      else if (attemptedKey !== null) void player.playKey(attemptedKey === ' ' ? 'space' : 'letter', 'down', soundProfile, soundVolume);
     } else if (soundEnabled && nextTyped.length < typed.length) {
       suppressReleaseSound.current = false;
       void (soundPlayer.current ??= new KeyboardSoundPlayer()).playKey('backspace', 'down', soundProfile, soundVolume);
     }
-    if (nextTyped.length >= target.length && startedAt.current !== null) {
+    if (acceptedTyped.length >= target.length && startedAt.current !== null) {
       finished.current = true;
       setElapsedMs(performance.now() - startedAt.current);
     }
-    setValue(next);
+    setValue(acceptedTyped.join(''));
   };
   const releaseKey = (key: string) => {
     if (!soundEnabled || !soundPlayer.current || !([...key].length === 1 || key === 'Backspace' || key === 'Enter')) return;
@@ -189,6 +205,7 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
     backspaces.current = 0;
     exposures.current.clear();
     mistakes.current.clear();
+    setBlockedAttempt(null);
     setValue('');
     setElapsedMs(0);
     setSaveState('idle');
@@ -197,6 +214,7 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   };
   const sessionLabel = durationMs !== null ? `${Math.round(durationMs / 1_000)} second sprint` : prepared.sessionConfig.targetLength !== null ? `${target.length} character target` : 'Open practice';
   return <section className="ff-practice-workspace" aria-labelledby="practice-session-heading">
+    <CompletionConfetti completedAt={done ? startedWallAt.current : null} />
     <header className="ff-practice-toolbar"><div><span className="ff-eyebrow">Now typing</span><h2 id="practice-session-heading">{prepared.source.title}</h2></div><span className="ff-session-kind">{sessionLabel}</span><button className="ff-button ff-button-quiet" type="button" onClick={onExit}>Exit session</button></header>
     <div className="ff-live-stats"><div><small>TIME</small><strong>{remainingMs === null ? '∞' : `${Math.ceil(remainingMs / 1000)}`}</strong></div><div><small>WPM</small><strong>{wpm}</strong></div><div><small>ACCURACY</small><strong>{accuracy}%</strong></div><div><small>PROGRESS</small><strong>{Math.round(progressRatio * 100)}%</strong></div></div>
     {done ? <section className="ff-finish-panel" role="dialog" aria-labelledby="practice-finish-heading" aria-describedby="practice-finish-copy">
@@ -211,12 +229,12 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
       <div className="ff-pace-surface" data-pace-state={paceState} style={paceStyle}>
         <div className="ff-pace-readout"><span aria-hidden="true" /><span>{paceGuideLabel}</span><strong>{paceGuideWpm} WPM</strong><em>{paceState === 'warming' ? 'Calibrating' : paceDelta >= 0 ? `+${paceDelta} ahead` : `${Math.abs(paceDelta)} behind`}</em></div>
         <div ref={targetRef} className="ff-practice-target" role="textbox" aria-label="Practice text. Start typing." tabIndex={0} onClick={() => inputRef.current?.focus()} onFocus={() => inputRef.current?.focus()}>
-          {target.map((char, index) => <span ref={index === typed.length ? caretRef : undefined} key={index} className={index < typed.length ? typed[index] === char ? 'ff-target-correct' : 'ff-target-error' : index === typed.length ? 'ff-target-current' : 'ff-target-upcoming'}>{char}</span>)}
+          {target.map((char, index) => <span ref={index === typed.length ? caretRef : undefined} key={index} className={index < typed.length ? typed[index] === char ? 'ff-target-correct' : 'ff-target-error' : index === typed.length ? `ff-target-current${blockedAttempt ? ' ff-target-current-error' : ''}` : 'ff-target-upcoming'}>{char}</span>)}
           <textarea ref={inputRef} className="ff-practice-capture" value={value} onChange={(event) => acceptInput(event.target.value)} onKeyUp={(event) => releaseKey(event.key)} onPaste={(event) => event.preventDefault()} spellCheck={false} autoCapitalize="off" autoCorrect="off" aria-label="Typing input" />
         </div>
       </div>
       {showKeyboard ? <div className="ff-keyboard" aria-label="Keyboard preview">{['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map((row) => <div key={row}>{[...row].map((key) => <span key={key} className={value.endsWith(key) ? 'ff-key ff-key-active' : 'ff-key'}>{key}</span>)}</div>)}</div> : null}
-      <p className="ff-session-status" role="status">{typed.length ? 'Keep your rhythm' : 'Start typing to begin the timer'}</p>
+      <p className="ff-session-status" role="status">{blockedAttempt ? `Expected “${blockedAttempt.expected}” — try again` : typed.length ? 'Keep your rhythm' : 'Start typing to begin the timer'}</p>
     </>}
   </section>;
 }
