@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionCoordinator } from '../../src/app/sessionCoordinator.js';
 import type { PracticeConfig } from '../../src/contracts/models.js';
@@ -9,6 +9,7 @@ import type { DictionaryManifest } from '../../src/domain/training/dictionary.js
 import { preparePractice } from '../../src/domain/training/practice.js';
 import { PracticeSetup } from '../../src/features/practice/PracticeSetup.js';
 import { PracticeSession, scrollPracticeCaretIntoView } from '../../src/features/practice/PracticeSession.js';
+import type { PracticeResultSummary } from '../../src/app/practicePersistence.js';
 import { createMockRepository } from '../../src/platform/mock-repository.js';
 import { createRuntimeStore } from '../../src/state/runtime.js';
 import { PROFILE_A_ID } from '../fixtures/contracts/index.js';
@@ -57,16 +58,25 @@ describe('M13 practice flow', () => {
   });
 
   it('validates setup locally and prepares an explicit configuration', async () => {
+    const randomUUID = vi.spyOn(crypto, 'randomUUID')
+      .mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
+      .mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
+      .mockReturnValue('33333333-3333-4333-8333-333333333333');
     const onStart = vi.fn();
     render(<PracticeSetup manifest={manifest} initialConfig={baseConfig} onStart={onStart} />);
-    fireEvent.change(screen.getByLabelText('Seed'), { target: { value: 'repeatable' } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Start practice/ })); });
     expect(onStart).toHaveBeenCalledOnce();
-    expect(onStart.mock.calls[0][1]).toMatchObject({ seed: 'repeatable', tier: 'beginner' });
+    const firstSeed = onStart.mock.calls[0][1].seed;
+    expect(firstSeed).not.toBe(baseConfig.seed);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Start practice/ })); });
+    expect(onStart.mock.calls[1][1]).toMatchObject({ tier: 'beginner' });
+    expect(onStart.mock.calls[1][1].seed).not.toBe(firstSeed);
+    expect(screen.queryByLabelText('Seed')).toBeNull();
 
     fireEvent.change(screen.getByLabelText('Focus keys'), { target: { value: 'z' } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Start practice/ })); });
     expect(screen.getByRole('alert').textContent).toContain('No local dictionary words');
+    randomUUID.mockRestore();
   });
 
   it('types directly on the generated passage without a visible input box', () => {
@@ -78,6 +88,19 @@ describe('M13 practice flow', () => {
     expect(container.querySelectorAll('.ff-target-error')).toHaveLength(1);
     expect(container.querySelector('.ff-target-current')).not.toBeNull();
     expect(container.querySelector('.ff-practice-input')).toBeNull();
+  });
+
+  it('reports a completed run for profile history', async () => {
+    const prepared = preparePractice(manifest, baseConfig);
+    const text = targetText(prepared);
+    let completion: PracticeResultSummary | null = null;
+    const onComplete = vi.fn(async (result: PracticeResultSummary) => { completion = result; return true; });
+    render(<PracticeSession prepared={prepared} onExit={() => undefined} soundEnabled={false} profileName="Ada" onComplete={onComplete} />);
+    fireEvent.change(screen.getByLabelText('Typing input'), { target: { value: text } });
+
+    await waitFor(() => expect(onComplete).toHaveBeenCalledOnce());
+    expect(completion).toMatchObject({ attempts: Array.from(text).length, errorAttempts: 0, retainedErrors: 0, completedWords: 25 });
+    expect(await screen.findByText('Saved to Ada.')).toBeTruthy();
   });
 
   it('shows a clear result when a timed session ends and can restart it', () => {
@@ -95,6 +118,24 @@ describe('M13 practice flow', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
       expect(screen.queryByRole('dialog', { name: 'Session complete' })).toBeNull();
       expect(screen.getByLabelText('Typing input')).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('moves and recolors the pace glow against the selected WPM benchmark', () => {
+    vi.useFakeTimers();
+    try {
+      const prepared = preparePractice(manifest, { ...baseConfig, termination: { kind: 'timed', seconds: 15 } });
+      const { container } = render(<PracticeSession prepared={prepared} onExit={() => undefined} soundEnabled={false} paceGuideWpm={100} paceGuideLabel="Personal best" />);
+      expect(screen.getByText('Personal best')).toBeTruthy();
+      fireEvent.change(screen.getByLabelText('Typing input'), { target: { value: targetText(prepared)[0] } });
+      act(() => { vi.advanceTimersByTime(1_000); });
+
+      const glow = container.querySelector<HTMLElement>('.ff-pace-surface');
+      expect(glow?.dataset.paceState).toBe('behind');
+      expect(glow?.style.getPropertyValue('--ff-pace-progress')).toBe('6.666666666666667%');
+      expect(screen.getByText('88 behind')).toBeTruthy();
     } finally {
       vi.useRealTimers();
     }

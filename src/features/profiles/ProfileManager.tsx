@@ -31,7 +31,11 @@ export function ProfileManager({ coordinator, profilesStore, defaultSettings }: 
       avatarToken: 'default',
       analyticsZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       settings: defaultSettings,
-    }).then((result) => { if (result.ok) setName(''); });
+    }).then((result) => {
+      if (!result.ok) return;
+      setName('');
+      void coordinator.switchProfile(result.value.id);
+    });
   };
 
   const saveEdit = (event: FormEvent) => {

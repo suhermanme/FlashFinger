@@ -18,9 +18,11 @@ export function PracticeSetup({ manifest, initialConfig, onStart }: PracticeSetu
   const submit = (event: FormEvent) => {
     event.preventDefault();
     try {
-      const validation = validatePracticeConfig(config);
+      const sessionConfig = { ...config, seed: crypto.randomUUID() };
+      const validation = validatePracticeConfig(sessionConfig);
       if (!validation.valid) throw new DictionaryConfigurationError(validation.errors[0]?.message ?? 'Practice configuration is invalid.');
-      setError(null); onStart(preparePractice(manifest, config), config);
+      setConfig(sessionConfig);
+      setError(null); onStart(preparePractice(manifest, sessionConfig), sessionConfig);
     }
     catch (cause) { setError(cause instanceof DictionaryConfigurationError ? cause.message : 'Practice could not be prepared.'); }
   };
@@ -44,7 +46,6 @@ export function PracticeSetup({ manifest, initialConfig, onStart }: PracticeSetu
         </fieldset>
       </section>
       <section className="ff-card ff-setup-options"><div className="ff-section-heading"><span>02</span><div><h3>Fine tune</h3><p>Optional controls for focused drills.</p></div></div>
-        <label className="ff-field">Seed<input value={config.seed} onChange={(event) => setConfig({ ...config, seed: event.target.value })} /></label>
         <label className="ff-field">Focus keys<input value={config.keyFilter ?? ''} maxLength={4} placeholder="e.g. asdf"
           onChange={(event) => setConfig({ ...config, keyFilter: event.target.value || null })} /></label>
         <div className="ff-toggle-row"><label><input type="checkbox" checked={config.punctuation}

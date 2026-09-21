@@ -34,6 +34,10 @@ describe('desktop application navigation', () => {
     expect((screen.getByRole('radio', { name: /Thocky/ }) as HTMLInputElement).checked).toBe(true);
     fireEvent.change(screen.getByRole('slider', { name: 'Sound volume' }), { target: { value: '95' } });
     expect(screen.getByText('95%')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Pace guide benchmark'), { target: { value: 'best' } });
+    expect((screen.getByLabelText('Pace guide benchmark') as HTMLSelectElement).value).toBe('best');
+    fireEvent.change(screen.getByRole('slider', { name: 'Target WPM' }), { target: { value: '65' } });
+    expect(screen.getByText('65')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Use dark theme' }));
     expect(document.documentElement.dataset.ffTheme).toBe('dark');

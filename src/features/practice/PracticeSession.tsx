@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { PreparedPractice } from '../../domain/training/practice.js';
 import { KeyboardSoundPlayer, type KeyboardSoundProfile } from '../../engines/audio/keyboardSynth.js';
+import type { PracticeResultSummary } from '../../app/practicePersistence.js';
 
 function graphemes(value: string): string[] {
   return Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(value), (part) => part.segment);
@@ -29,11 +30,17 @@ export interface PracticeSessionProps {
   soundEnabled?: boolean;
   soundProfile?: KeyboardSoundProfile;
   soundVolume?: number;
+  paceGuideWpm?: number;
+  paceGuideLabel?: string;
+  profileName?: string | null;
+  onComplete?(result: PracticeResultSummary): Promise<boolean>;
+  onRestart?(): void;
 }
 
-export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEnabled = true, soundProfile = 'thocky', soundVolume = .8 }: PracticeSessionProps) {
+export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEnabled = true, soundProfile = 'thocky', soundVolume = .8, paceGuideWpm = 40, paceGuideLabel = 'Target pace', profileName = null, onComplete, onRestart }: PracticeSessionProps) {
   const [value, setValue] = useState('');
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLSpanElement>(null);
@@ -42,6 +49,14 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   const previousTypedLength = useRef(0);
   const completionPlayed = useRef(false);
   const suppressReleaseSound = useRef(false);
+  const reportedCompletion = useRef(false);
+  const startedWallAt = useRef<number | null>(null);
+  const attempts = useRef(0);
+  const correctAttempts = useRef(0);
+  const errorAttempts = useRef(0);
+  const backspaces = useRef(0);
+  const exposures = useRef(new Map<string, { attempts: number; errors: number }>());
+  const mistakes = useRef(new Map<string, { expected: string; attempted: string; count: number }>());
   const soundPlayer = useRef<KeyboardSoundPlayer | null>(null);
   const text = useMemo(() => Array.from({ length: Math.ceil((prepared.source.graphemeCount ?? 0) / prepared.source.chunkSize) }, (_, index) => prepared.source.chunkAt(index) ?? '').join(''), [prepared]);
   const target = useMemo(() => graphemes(text), [text]);
@@ -54,6 +69,10 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   const correct = typed.reduce((total, char, index) => total + Number(char === target[index]), 0);
   const accuracy = typed.length ? Math.round(100 * correct / typed.length) : 100;
   const wpm = elapsedMs >= 1_000 ? Math.round(correct / 5 / (elapsedMs / 60_000)) : 0;
+  const progressRatio = durationMs !== null ? Math.min(1, elapsedMs / durationMs) : Math.min(1, typed.length / Math.max(1, target.length));
+  const paceDelta = wpm - paceGuideWpm;
+  const paceState = typed.length === 0 || elapsedMs < 1_000 ? 'warming' : wpm >= paceGuideWpm ? 'ahead' : wpm >= paceGuideWpm * .85 ? 'close' : 'behind';
+  const paceStyle = { '--ff-pace-progress': `${Math.max(1, progressRatio * 100)}%` } as CSSProperties;
   useEffect(() => {
     inputRef.current?.focus();
     const timer = window.setInterval(() => {
@@ -83,12 +102,57 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
     if (soundEnabled) void (soundPlayer.current ??= new KeyboardSoundPlayer()).playFeedback('complete', soundVolume);
   }, [done]);
 
+  useEffect(() => {
+    if (!done || reportedCompletion.current || startedWallAt.current === null || !onComplete) return;
+    reportedCompletion.current = true;
+    setSaveState('saving');
+    const prefix = target.slice(0, Math.min(typed.length, target.length)).join('');
+    const completePrefix = typed.length >= target.length ? prefix : prefix.replace(/\S+$/, '');
+    void onComplete({
+      startedAt: new Date(startedWallAt.current).toISOString(),
+      endedAt: new Date().toISOString(),
+      activeMs: elapsedMs,
+      attempts: attempts.current,
+      correctAttempts: correctAttempts.current,
+      errorAttempts: errorAttempts.current,
+      backspaces: backspaces.current,
+      retainedCorrect: correct,
+      retainedErrors: typed.length - correct,
+      completedWords: completePrefix.match(/\S+/g)?.length ?? 0,
+      exposures: [...exposures.current.entries()].map(([expected, counts]) => ({ expected, ...counts })),
+      mistakes: [...mistakes.current.values()],
+    }).then((saved) => setSaveState(saved ? 'saved' : 'failed')).catch(() => setSaveState('failed'));
+  }, [done, onComplete]);
+
   useEffect(() => { soundPlayer.current?.setVolume(soundVolume); }, [soundVolume]);
 
   const acceptInput = (next: string) => {
     if (done) return;
-    if (startedAt.current === null && next.length > 0) startedAt.current = performance.now();
+    if (startedAt.current === null && next.length > 0) {
+      startedAt.current = performance.now();
+      startedWallAt.current = Date.now();
+    }
     const nextTyped = graphemes(next);
+    if (nextTyped.length > typed.length) {
+      for (let index = typed.length; index < nextTyped.length; index += 1) {
+        const expected = target[index] ?? '';
+        const attempted = nextTyped[index];
+        const correctAttempt = attempted === expected;
+        attempts.current += 1;
+        if (correctAttempt) correctAttempts.current += 1;
+        else errorAttempts.current += 1;
+        const exposure = exposures.current.get(expected) ?? { attempts: 0, errors: 0 };
+        exposure.attempts += 1;
+        if (!correctAttempt) exposure.errors += 1;
+        exposures.current.set(expected, exposure);
+        if (!correctAttempt) {
+          const key = `${expected}\u0000${attempted}`;
+          const mistake = mistakes.current.get(key) ?? { expected, attempted, count: 0 };
+          mistake.count += 1;
+          mistakes.current.set(key, mistake);
+        }
+      }
+    } else if (nextTyped.length < typed.length) backspaces.current += typed.length - nextTyped.length;
     if (soundEnabled && nextTyped.length > typed.length) {
       const index = nextTyped.length - 1;
       const incorrect = nextTyped[index] !== target[index];
@@ -114,29 +178,42 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   };
   const restart = () => {
     startedAt.current = null;
+    startedWallAt.current = null;
     finished.current = false;
     previousTypedLength.current = 0;
     completionPlayed.current = false;
+    reportedCompletion.current = false;
+    attempts.current = 0;
+    correctAttempts.current = 0;
+    errorAttempts.current = 0;
+    backspaces.current = 0;
+    exposures.current.clear();
+    mistakes.current.clear();
     setValue('');
     setElapsedMs(0);
+    setSaveState('idle');
     if (targetRef.current) targetRef.current.scrollTop = 0;
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
   const sessionLabel = durationMs !== null ? `${Math.round(durationMs / 1_000)} second sprint` : prepared.sessionConfig.targetLength !== null ? `${target.length} character target` : 'Open practice';
   return <section className="ff-practice-workspace" aria-labelledby="practice-session-heading">
     <header className="ff-practice-toolbar"><div><span className="ff-eyebrow">Now typing</span><h2 id="practice-session-heading">{prepared.source.title}</h2></div><span className="ff-session-kind">{sessionLabel}</span><button className="ff-button ff-button-quiet" type="button" onClick={onExit}>Exit session</button></header>
-    <div className="ff-live-stats"><div><small>TIME</small><strong>{remainingMs === null ? '∞' : `${Math.ceil(remainingMs / 1000)}`}</strong></div><div><small>WPM</small><strong>{wpm}</strong></div><div><small>ACCURACY</small><strong>{accuracy}%</strong></div><div><small>PROGRESS</small><strong>{Math.min(100, Math.round(100 * typed.length / Math.max(1, target.length)))}%</strong></div></div>
+    <div className="ff-live-stats"><div><small>TIME</small><strong>{remainingMs === null ? '∞' : `${Math.ceil(remainingMs / 1000)}`}</strong></div><div><small>WPM</small><strong>{wpm}</strong></div><div><small>ACCURACY</small><strong>{accuracy}%</strong></div><div><small>PROGRESS</small><strong>{Math.round(progressRatio * 100)}%</strong></div></div>
     {done ? <section className="ff-finish-panel" role="dialog" aria-labelledby="practice-finish-heading" aria-describedby="practice-finish-copy">
       <span className="ff-finish-icon" aria-hidden="true">✓</span>
       <span className="ff-eyebrow">{finishedByTime ? 'Time’s up' : 'Passage complete'}</span>
       <h3 id="practice-finish-heading">Session complete</h3>
       <p id="practice-finish-copy">Nice work. Here is how this run turned out.</p>
       <div className="ff-result-summary"><div><strong>{wpm}</strong><small>WPM</small></div><div><strong>{accuracy}%</strong><small>Accuracy</small></div><div><strong>{correct}</strong><small>Correct keys</small></div><div><strong>{Math.round(elapsedMs / 1_000)}s</strong><small>Active time</small></div></div>
-      <div className="ff-finish-actions"><button className="ff-button" data-variant="primary" type="button" onClick={restart}>Try again</button><button className="ff-button" type="button" onClick={onExit}>Back to setup</button></div>
+      <div className="ff-finish-actions"><button className="ff-button" data-variant="primary" type="button" onClick={onRestart ?? restart}>Try again</button><button className="ff-button" type="button" onClick={onExit}>Back to setup</button></div>
+      <p className={`ff-save-status${saveState === 'failed' ? ' ff-save-error' : ''}`} role="status">{!profileName ? 'Create or select a profile before practicing to save history.' : saveState === 'saving' ? `Saving to ${profileName}…` : saveState === 'saved' ? `Saved to ${profileName}.` : saveState === 'failed' ? 'The result could not be saved.' : ''}</p>
     </section> : <>
-      <div ref={targetRef} className="ff-practice-target" role="textbox" aria-label="Practice text. Start typing." tabIndex={0} onClick={() => inputRef.current?.focus()} onFocus={() => inputRef.current?.focus()}>
-        {target.map((char, index) => <span ref={index === typed.length ? caretRef : undefined} key={index} className={index < typed.length ? typed[index] === char ? 'ff-target-correct' : 'ff-target-error' : index === typed.length ? 'ff-target-current' : 'ff-target-upcoming'}>{char}</span>)}
-        <textarea ref={inputRef} className="ff-practice-capture" value={value} onChange={(event) => acceptInput(event.target.value)} onKeyUp={(event) => releaseKey(event.key)} onPaste={(event) => event.preventDefault()} spellCheck={false} autoCapitalize="off" autoCorrect="off" aria-label="Typing input" />
+      <div className="ff-pace-surface" data-pace-state={paceState} style={paceStyle}>
+        <div className="ff-pace-readout"><span aria-hidden="true" /><span>{paceGuideLabel}</span><strong>{paceGuideWpm} WPM</strong><em>{paceState === 'warming' ? 'Calibrating' : paceDelta >= 0 ? `+${paceDelta} ahead` : `${Math.abs(paceDelta)} behind`}</em></div>
+        <div ref={targetRef} className="ff-practice-target" role="textbox" aria-label="Practice text. Start typing." tabIndex={0} onClick={() => inputRef.current?.focus()} onFocus={() => inputRef.current?.focus()}>
+          {target.map((char, index) => <span ref={index === typed.length ? caretRef : undefined} key={index} className={index < typed.length ? typed[index] === char ? 'ff-target-correct' : 'ff-target-error' : index === typed.length ? 'ff-target-current' : 'ff-target-upcoming'}>{char}</span>)}
+          <textarea ref={inputRef} className="ff-practice-capture" value={value} onChange={(event) => acceptInput(event.target.value)} onKeyUp={(event) => releaseKey(event.key)} onPaste={(event) => event.preventDefault()} spellCheck={false} autoCapitalize="off" autoCorrect="off" aria-label="Typing input" />
+        </div>
       </div>
       {showKeyboard ? <div className="ff-keyboard" aria-label="Keyboard preview">{['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map((row) => <div key={row}>{[...row].map((key) => <span key={key} className={value.endsWith(key) ? 'ff-key ff-key-active' : 'ff-key'}>{key}</span>)}</div>)}</div> : null}
       <p className="ff-session-status" role="status">{typed.length ? 'Keep your rhythm' : 'Start typing to begin the timer'}</p>
