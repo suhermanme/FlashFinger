@@ -70,6 +70,25 @@ button, input, select, textarea { font: inherit; }
 .ff-custom-text-setup { display: grid; gap: var(--ff-space-4); max-width: 48rem; }
 .ff-custom-text-setup textarea { min-height: 12rem; resize: vertical; font: inherit; line-height: 1.5; }
 .ff-custom-text-setup select { min-height: 2.75rem; }
+.ff-practice-session { display: grid; gap: var(--ff-space-4); }
+.ff-practice-target { max-height: 14rem; overflow: auto; padding: var(--ff-space-4); border: 1px solid var(--ff-surface-border); font: var(--ff-size-typing)/var(--ff-line-height-typing) var(--ff-font-typing); white-space: pre-wrap; word-break: break-word; }
+.ff-practice-input { min-height: 8rem; resize: vertical; font: var(--ff-size-typing)/var(--ff-line-height-typing) var(--ff-font-typing); }
+.ff-practice-workspace { min-height: 70vh; padding: var(--ff-space-6); background: var(--ff-surface); border: 1px solid var(--ff-surface-border); border-radius: var(--ff-radius-card); }
+.ff-practice-toolbar { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--ff-space-5); border-bottom: 1px solid var(--ff-surface-border); padding-bottom: var(--ff-space-4); }
+.ff-practice-toolbar h2 { margin: 0; font-size: 1.1rem; }
+.ff-practice-toolbar nav { display: flex; gap: var(--ff-space-2); }
+.ff-practice-toolbar nav button { border: 0; background: transparent; color: var(--ff-text-muted); padding: var(--ff-space-2) var(--ff-space-3); cursor: pointer; }
+.ff-practice-toolbar nav .ff-mode-active { color: var(--ff-action-accent); border-bottom: 2px solid currentColor; }
+.ff-eyebrow, .ff-live-stats small { display: block; color: var(--ff-text-muted); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; }
+.ff-live-stats { display: flex; justify-content: center; gap: clamp(1.5rem, 8vw, 7rem); margin: var(--ff-space-6) 0; text-align: center; }
+.ff-live-stats strong { display: block; margin-top: .3rem; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.ff-practice-workspace .ff-practice-target { max-height: 17rem; margin: 0 auto; border: 0; background: transparent; text-align: center; font-size: clamp(1.4rem, 3vw, 2.5rem); line-height: 1.65; }
+.ff-practice-workspace .ff-practice-input { display: block; width: min(48rem, 100%); min-height: 4rem; margin: var(--ff-space-5) auto; border: 2px solid var(--ff-action-accent); border-radius: var(--ff-radius-control); background: var(--ff-surface-raised); }
+.ff-keyboard { display: grid; gap: .35rem; justify-content: center; margin-top: var(--ff-space-6); }
+.ff-keyboard > div { display: flex; justify-content: center; gap: .35rem; }
+.ff-key { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 1px solid var(--ff-surface-border); border-radius: .35rem; background: var(--ff-surface-raised); color: var(--ff-text-secondary); text-transform: uppercase; }
+.ff-key-active { background: var(--ff-action-accent); color: var(--ff-text-inverse); }
+.ff-session-status { text-align: center; color: var(--ff-text-muted); }
 
 @media (max-width: 40rem) { .ff-shell { padding: var(--ff-space-3); } .ff-card { padding: var(--ff-space-4); } .ff-nav-list { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
