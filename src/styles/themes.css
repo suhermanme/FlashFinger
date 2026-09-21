@@ -1,16 +1,16 @@
 :root,
 :root[data-ff-theme='light'] {
   color-scheme: light;
-  --ff-surface-background: #fffaf2;
-  --ff-surface: #fffefb;
+  --ff-surface-background: #f4f6f5;
+  --ff-surface: #fbfcfb;
   --ff-surface-raised: #ffffff;
-  --ff-surface-border: #c8c2b8;
+  --ff-surface-border: #dce2df;
   --ff-surface-overlay: rgb(20 28 31 / 62%);
-  --ff-text-primary: #20242a;
-  --ff-text-secondary: #454d56;
-  --ff-text-muted: #626a73;
+  --ff-text-primary: #17201e;
+  --ff-text-secondary: #46524f;
+  --ff-text-muted: #737e7b;
   --ff-text-inverse: #ffffff;
-  --ff-typing-upcoming: #68717a;
+  --ff-typing-upcoming: #727d7a;
   --ff-typing-correct: #086f67;
   --ff-typing-error: #a61b35;
   --ff-typing-error-background: #ffe1e5;
@@ -33,10 +33,10 @@
 
 :root[data-ff-theme='dark'] {
   color-scheme: dark;
-  --ff-surface-background: #15191c;
-  --ff-surface: #1c2226;
-  --ff-surface-raised: #252c31;
-  --ff-surface-border: #566169;
+  --ff-surface-background: #0f1413;
+  --ff-surface: #161c1a;
+  --ff-surface-raised: #202725;
+  --ff-surface-border: #394441;
   --ff-surface-overlay: rgb(0 0 0 / 72%);
   --ff-text-primary: #f5f2ea;
   --ff-text-secondary: #d5d9d7;
@@ -76,6 +76,7 @@
   --ff-space-3: 0.75rem;
   --ff-space-4: 1rem;
   --ff-space-6: 1.5rem;
+  --ff-space-8: 2rem;
   --ff-duration-fast: 80ms;
   --ff-duration-caret: 32ms;
   --ff-duration-completion: 220ms;
