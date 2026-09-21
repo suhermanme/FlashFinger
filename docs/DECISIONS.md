@@ -234,3 +234,7 @@ Migration impact: changing source, exclusions, tier counts, or metadata requires
 ## D-026 — Prepare custom text as bounded grapheme chunks
 
 Custom text is decoded and normalized before a typing source is constructed. The implementation uses fatal UTF decoding, rejects NUL-containing binary-like files, normalizes CRLF/CR and NFC, and caps output at 500,000 graphemes with 4,096-grapheme chunks. This keeps rendering and correction windows bounded while preserving logical target indices. Paste/file content is never persisted implicitly; callers must explicitly use the existing document repository contract for retention.
+
+## D-027 — Keep analytics derived, bounded, and worker-ready
+
+Live metrics retain only a bounded rolling point window and historical dashboards derive from session records with explicit mode filters. Calendar ranges are materialized as fixed daily buckets, including sparse and zero-activity days; the Canvas graph has an accessible textual equivalent. Analytics preparation is pure and exposed through a worker boundary, so input handling does not depend on chart rendering.

@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: `2026-09-21T16:49:10Z` (UTC)
+Last updated: `2026-09-21T16:56:40Z` (UTC)
 
 ## Completed prompts
 
@@ -293,14 +293,22 @@ Outputs: `src/domain/training/customText.ts`, `src/workers/text.worker.ts`, `src
 
 The setup never persists clipboard or pasted text implicitly. Empty normalized content and over-limit content are rejected before source construction; unsaved-source replay therefore has no document to load, while opt-in retention remains delegated to `Repository.saveDocument`.
 
-## M06–M14 verification evidence
+### M15 — Live chart and historical dashboards
+
+Status: **complete**.
+
+Implemented bounded rolling samples, weighted historical aggregation with explicit mode filters, fixed-range activity calendars and streak calculation, accessible Canvas live graph rendering, historical dashboard/calendar views, and an analytics worker boundary. Zero denominators and sparse ranges return null/empty-safe values; calendar buckets remain fixed and no chart library is used in the input path.
+
+Outputs: `src/domain/metrics/{rolling,aggregates,calendar}.ts`, `src/features/typing/LiveGraph.tsx`, `src/features/history/`, `src/workers/analytics.worker.ts`, and `tests/unit/analytics.test.ts`.
+
+## M06–M15 verification evidence
 
 Commands run on 2026-09-21 UTC:
 
 | Command | Exit | Outcome |
 |---|---:|---|
 | `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
-| `npm test -- --reporter=dot` | 0 | 20/20 files and 233/233 tests pass, including native Chrome IndexedDB and M12–M14 coverage. |
+| `npm test -- --reporter=dot` | 0 | 21/21 files and 236/236 tests pass, including native Chrome IndexedDB and M12–M15 coverage. |
 | `npm run build` | 0 | Renderer build passes: JS 275.07 kB / 83.76 kB gzip; CSS 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
 | Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
@@ -314,4 +322,4 @@ Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. 
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-The next eligible prompt is **M15 — Analytics slice**. It must use the M11–M14 session/source contracts and preserve durable aggregation boundaries.
+The next eligible prompt is **M16 — Offline delivery and local backups**. It must preserve the existing repository authority and session boundaries.

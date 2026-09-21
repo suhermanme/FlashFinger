@@ -1,6 +1,6 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-21T16:49:10Z` (UTC)
+Last updated: `2026-09-21T16:56:40Z` (UTC)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
 Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 changes are present and uncommitted.
@@ -21,8 +21,9 @@ Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 
 **M12 — Lessons slice is complete.**
 **M13 — Seeded practice slice is complete.**
 **M14 — Custom-text slice is complete.**
+**M15 — Analytics slice is complete.**
 
-The next eligible prompt is M15 analytics.
+The next eligible prompt is M16 offline delivery and backups.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -149,7 +150,7 @@ Custom text accepts bounded UTF-8 and UTF-16 BOM input, rejects invalid/binary c
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test -- --reporter=dot` | 0 | 20/20 test files and 233/233 tests pass, including native headless-Chrome IndexedDB and M12–M14 coverage. |
+| `npm test -- --reporter=dot` | 0 | 21/21 test files and 236/236 tests pass, including native headless-Chrome IndexedDB and M12–M15 coverage. |
 | `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 275.07 kB / 83.76 kB gzip and CSS is 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
 | Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
