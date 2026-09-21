@@ -86,7 +86,7 @@ Migration impact: the mock must be replaced by the real implementation in M04 (b
 Date: 2026-09-20
 Status: accepted in M03
 
-`TypingEngine` lives in `src/domain/typing/` with zero imports from React, DOM, audio, or storage modules. State transitions, command processing, and metric calculation all use deterministic absolute clock values (`baseNowMs`) for testability. The engine produces `EngineDelta[]` arrays and accepts `EngineCommand[]` — a serialisable, framework-agnostic interface. `EditLedger` enforces a bounded circular buffer (512 entries) for correction history, and `TextBuffer` uses grapheme-aware arrays via the spread operator for proper emoji/combining-character support.
+`TypingEngine` lives in `src/domain/typing/` with zero imports from React, DOM, audio, or storage modules. State transitions, command processing, and metric calculation all use deterministic absolute clock values (`baseNowMs`) for testability. The engine produces `EngineDelta[]` arrays and accepts `EngineCommand[]` — a serialisable, framework-agnostic interface. `EditLedger` enforces a bounded circular buffer (512 entries) for correction history, and `TextBuffer` segments target text with `Intl.Segmenter` so ZWJ emoji, regional indicators, and combining sequences remain intact.
 
 Migration impact: future UI layers (M06+) must compose the engine through its command/delta interface rather than reaching into internal fields. Metric formulas in `src/domain/metrics/` are similarly pure and must be updated separately when the DESIGN_SPECIFICATION canonical definitions change.
 
@@ -152,3 +152,50 @@ Status: accepted in M05
 Preload exposes the existing typed `FfBridge`, but all repository calls travel through one internal `flashfinger:invoke` transport. Main dispatches only the closed `repo.*` list after checking protocol, request ID, argument shape, an 8 MiB serialized payload cap, expected webContents ID, top-level frame identity, and `flashfinger://app` origin. Repository storage paths are fixed confined basenames under `app.getPath('userData')/repository`; IPC never accepts a filesystem path.
 
 Migration impact: adding an IPC operation requires updating the shared whitelist, preload whitelist, renderer adapter, and main dispatcher together. File import/export in M16 must use separate narrow handlers and must not expose path or filesystem primitives.
+
+## D-018 — Fence profile hydration outside per-key runtime state
+
+Date: 2026-09-21
+Status: accepted in M06
+
+Profile lifecycle state is split across small vanilla Zustand stores, while `ProfileCoordinator` owns repository calls and a monotonically increasing hydration generation. Per-key typing state remains inside `TypingEngine`; only scalar metric snapshots may enter the runtime store at 250 ms intervals. Active sessions and unsaved final results are explicit profile-switch/delete barriers.
+
+Migration impact: M11 must release session controllers and resolve pending durable saves before asking this coordinator to switch. New profile-owned asynchronous reads must carry the same generation fence and publish only while their profile remains current.
+
+## D-019 — Publish one resolved semantic-token snapshot
+
+Date: 2026-09-21
+Status: accepted in M07
+
+One `data-ff-theme` root attribute selects semantic CSS custom properties for React, imperative DOM, SVG, and canvas consumers. `ThemeController` reads all canvas-relevant computed values once when the resolved palette or motion policy changes and publishes an immutable snapshot. The LocalStorage value is only a tiny first-paint resolved-theme hint, never authoritative profile settings.
+
+Migration impact: new imperative colors or durations must be added to the semantic token contract and both palettes. Canvas/visual code must consume snapshots rather than query computed style per input.
+
+## D-020 — Keep scored input and text presentation imperative
+
+Date: 2026-09-21
+Status: accepted in M08
+
+A labeled native textarea supplies `beforeinput`, composition, and focus semantics. `InputAdapter` translates commits directly to engine commands and transient sinks. `TextRenderer` owns a bounded five-line, 2,048-grapheme DOM window plus cached caret coordinates, preserves off-DOM character state, and performs no layout reads in the accepted-input path. React owns lifecycle and configuration only.
+
+Migration impact: M11 session orchestration must subscribe through the adapter/delta boundary and must not put per-character cursor or target arrays into Zustand/React state. Font/container remeasurement remains restricted to ready or paused state.
+
+## D-021 — Treat Web Audio scheduling as a bounded best-effort service
+
+Date: 2026-09-21
+Status: accepted in M09
+
+Audio is created only after a gesture, prepared before ready, and driven synchronously from committed input. Immutable decoded buffers are cached for at most two packs/16 MiB, while one-shot sources are capped at 24 and the oldest voice fades over 5 ms. Device/resume failure degrades to explicit muted training. Scheduling telemetry is diagnostic and is never presented as physical audible latency.
+
+The M09 feasibility pack uses deterministic generated CC0 PCM-JSON fixtures so hash/decode/cache behavior remains inspectable. Production sound delivery should move to short locally licensed PCM WAV assets while retaining the same manifest and bounded-buffer semantics.
+
+Migration impact: adding production packs may version the manifest decoder but must preserve local hashes, attribution, cache/voice caps, and pre-ready decoding. Release qualification still requires physical loopback measurements.
+
+## D-022 — Pool optional feedback and preserve synchronous essentials
+
+Date: 2026-09-21
+Status: accepted in M10
+
+Correctness classes and caret destination update in the input turn. Decorative caret, key, and completion work uses a coalescing frame scheduler, fixed particle/voice bounds, and cancellation on pause/unmount. Reduced motion retains static correctness state while disabling interpolation, bounce, and particles.
+
+Migration impact: later session screens may inject these controllers into `TypingSurface`, but ordinary input must not allocate particles, wait for animation frames, or introduce layout reads. New decorative work must share the bounded scheduler or prove an equivalent cap.

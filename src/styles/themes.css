@@ -1,0 +1,99 @@
+:root,
+:root[data-ff-theme='light'] {
+  color-scheme: light;
+  --ff-surface-background: #fffaf2;
+  --ff-surface: #fffefb;
+  --ff-surface-raised: #ffffff;
+  --ff-surface-border: #c8c2b8;
+  --ff-surface-overlay: rgb(20 28 31 / 62%);
+  --ff-text-primary: #20242a;
+  --ff-text-secondary: #454d56;
+  --ff-text-muted: #626a73;
+  --ff-text-inverse: #ffffff;
+  --ff-typing-upcoming: #68717a;
+  --ff-typing-correct: #086f67;
+  --ff-typing-error: #a61b35;
+  --ff-typing-error-background: #ffe1e5;
+  --ff-typing-caret: #087f75;
+  --ff-typing-selection: #b9e5df;
+  --ff-action-accent: #08766d;
+  --ff-action-accent-hover: #055f58;
+  --ff-action-focus-ring: #005fcc;
+  --ff-action-disabled: #8a9299;
+  --ff-chart-grid: #d4cec4;
+  --ff-chart-speed: #08766d;
+  --ff-chart-gross-speed: #7a4db3;
+  --ff-chart-accuracy: #a61b35;
+  --ff-chart-activity-0: #eee9df;
+  --ff-chart-activity-1: #bfe5dd;
+  --ff-chart-activity-2: #74c8bb;
+  --ff-chart-activity-3: #269d91;
+  --ff-chart-activity-4: #08675f;
+}
+
+:root[data-ff-theme='dark'] {
+  color-scheme: dark;
+  --ff-surface-background: #15191c;
+  --ff-surface: #1c2226;
+  --ff-surface-raised: #252c31;
+  --ff-surface-border: #566169;
+  --ff-surface-overlay: rgb(0 0 0 / 72%);
+  --ff-text-primary: #f5f2ea;
+  --ff-text-secondary: #d5d9d7;
+  --ff-text-muted: #aeb7b7;
+  --ff-text-inverse: #14201f;
+  --ff-typing-upcoming: #aeb7b7;
+  --ff-typing-correct: #68d5c5;
+  --ff-typing-error: #ff91a0;
+  --ff-typing-error-background: #562532;
+  --ff-typing-caret: #74e2d1;
+  --ff-typing-selection: #245d57;
+  --ff-action-accent: #66d3c3;
+  --ff-action-accent-hover: #8ce6d8;
+  --ff-action-focus-ring: #8bbcff;
+  --ff-action-disabled: #7b858c;
+  --ff-chart-grid: #465057;
+  --ff-chart-speed: #66d3c3;
+  --ff-chart-gross-speed: #c9a3ff;
+  --ff-chart-accuracy: #ff91a0;
+  --ff-chart-activity-0: #293137;
+  --ff-chart-activity-1: #28514d;
+  --ff-chart-activity-2: #26776e;
+  --ff-chart-activity-3: #3da99d;
+  --ff-chart-activity-4: #75dacb;
+}
+
+:root {
+  --ff-font-ui: Inter, ui-sans-serif, system-ui, sans-serif;
+  --ff-font-typing: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --ff-size-body: 1rem;
+  --ff-size-typing: 1.75rem;
+  --ff-line-height-typing: 1.65;
+  --ff-radius-card: 0.75rem;
+  --ff-radius-control: 0.5rem;
+  --ff-space-1: 0.25rem;
+  --ff-space-2: 0.5rem;
+  --ff-space-3: 0.75rem;
+  --ff-space-4: 1rem;
+  --ff-space-6: 1.5rem;
+  --ff-duration-fast: 80ms;
+  --ff-duration-caret: 32ms;
+  --ff-duration-completion: 220ms;
+  --ff-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (forced-colors: active) {
+  :root {
+    --ff-surface-background: Canvas;
+    --ff-surface: Canvas;
+    --ff-surface-raised: Canvas;
+    --ff-surface-border: CanvasText;
+    --ff-text-primary: CanvasText;
+    --ff-text-secondary: CanvasText;
+    --ff-text-muted: GrayText;
+    --ff-action-accent: LinkText;
+    --ff-action-focus-ring: Highlight;
+    --ff-typing-error: MarkText;
+    --ff-typing-error-background: Mark;
+  }
+}

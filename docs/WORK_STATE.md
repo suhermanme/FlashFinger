@@ -1,9 +1,9 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-20T23:49:34Z` (UTC)
+Last updated: `2026-09-21T08:09:03Z` (UTC)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
-Repository state: working tree contains the prior uncommitted M02/M03/M04 work and the M05 changes; unrelated changes were preserved.
+Repository state: working tree contains the completed M06–M10 tranche on top of committed M01–M05; changes remain uncommitted.
 
 ## Current status
 
@@ -12,8 +12,13 @@ Repository state: working tree contains the prior uncommitted M02/M03/M04 work a
 **M03 — Pure typing and timing engine is complete.**
 **M04 — Browser IndexedDB persistence is complete.**
 **M05 — Desktop durable repository is complete.**
+**M06 — Profile orchestration and Zustand stores is complete.**
+**M07 — Theme and accessible shell is complete.**
+**M08 — Native input adapter and text viewport is complete.**
+**M09 — Low-latency audio implementation/feasibility spike is complete; physical-output qualification remains open.**
+**M10 — Bounded feedback effects is complete.**
 
-The next eligible prompts are the post-persistence tasks in `docs/DESIGN_SPECIFICATION.md`; this handover stopped after M05 as requested.
+The next eligible prompt is M11, session lifecycle and durable result integration.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -80,14 +85,28 @@ Compaction writes/fsyncs/verifies a temporary snapshot, atomically replaces the 
 
 IPC uses one raw transport channel with a closed method whitelist, 8 MiB JSON request/response caps, exact arity/scalar checks, current protocol gating, main-frame validation, expected `webContents` ID, and the `flashfinger://app` origin. Repository paths are fixed confined basenames below Electron's `userData/repository`; no renderer filesystem primitive is exposed. Retained documents are capped at 5 MiB and journal records at 8 MiB.
 
+## Completed M06–M10 outputs
+
+- Profile/state: `src/state/`, `src/app/profileCoordinator.ts`, `src/features/profiles/`
+- Theme/shell: `src/styles/`, `src/app/themeController.ts`, `src/components/`, `src/features/settings/`
+- Input/viewport: `src/features/typing/`, `src/engines/visual/{layout,caret,textRenderer}.ts`
+- Audio: `src/engines/audio/`, `public/assets/sounds/test-pack/`, `public/content/sound-packs.json`
+- Feedback: `src/engines/visual/{effects,keyFeedback,motion}.ts`
+- Tests: five new integration files plus `tests/performance/`
+- Evidence: `docs/PERFORMANCE_BASELINE.md`
+
+Profile requests are generation-fenced; active/unsaved work blocks destructive profile transitions; metrics publish at no more than 4 Hz. Theme snapshots resolve semantic CSS tokens once per actual palette/motion change. Input is normalized through a native textarea and the imperative viewport mounts at most five lines/2,048 graphemes while preserving state across remounts. Audio is gesture-created, prepared ahead of ready, bounded to two decoded packs/16 MiB and 24 voices, and fails closed to muted training. Optional completion/key/caret motion is pooled, reduced-motion aware, and cancelled on pause/unmount.
+
 ## Last verification
 
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test` | 0 | 5/5 test files and 165/165 tests pass, including native headless-Chrome IndexedDB coverage and 20 M05 cases. |
-| `npm run build` | 0 | TypeScript and Vite production build pass; 26 modules transformed; renderer output is 272.96 kB / 82.91 kB gzip; Vite build duration 128 ms. |
+| `npm test -- --reporter=dot` | 0 | 11/11 test files and 199/199 tests pass, including native headless-Chrome IndexedDB coverage and the M06–M10 suites. |
+| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 272.06 kB / 82.51 kB gzip and CSS is 15.87 kB / 4.17 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
+| Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
+| Native Electron scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 4.50 ms. |
 | M05 suite on `/tmp` (`tmpfs`) | 0 | 20/20 tests pass, including all seven compaction cut points. |
 | M05 suite with workspace `TMPDIR` (`ext2/ext3` reported by `stat`) | 0 | 20/20 tests pass, including all seven compaction cut points. |
 
@@ -98,10 +117,11 @@ The initial sandboxed `npm test` attempt exited 1 with 144/145 passing because t
 - Native-browser coverage ran in installed headless Google Chrome only; Firefox and Safari were not available.
 - True multi-window Web Lock contention, browser eviction/private mode, and a physical quota-exhaustion condition were not exercised. Lease contention and quota rollback were tested deterministically with fake IndexedDB/fault injection.
 - Desktop crash recovery ran on Linux tmpfs and the workspace filesystem reported as ext2/ext3. Windows/NTFS and macOS/APFS were unavailable, so M05 is not yet crash-qualified on all three target filesystem families.
-- No real Electron `BrowserWindow` automation was launched; IPC sender logic was exercised with deterministic event doubles, while Electron TypeScript compilation passed.
+- A real headless Electron `BrowserWindow` ran the audio scheduling harness; repository IPC sender logic was still exercised only with deterministic event doubles.
 - Physical power-loss/fsync behavior, disk-full during compaction, symlink attacks by a same-user local adversary, and multi-process access outside the enforced single-instance app were not exercised.
 - Backup import/export intentionally returns `unsupported` until M16.
+- Native audio numbers measure API scheduling only. Physical audible/visible onset, audio quality, real keyboard input-to-paint, non-Chromium browsers, Windows/macOS, constrained CPU, and endurance remain unqualified; see `docs/PERFORMANCE_BASELINE.md`.
 
 ## Next handover action
 
-Proceed from the M05-complete state. Desktop uses only the main-owned journal/snapshot authority; browser continues to use IndexedDB. Do not introduce dual writes. M11 should rely on `Repository.commitSession` acknowledgement as the durable finalization boundary, and M16 should replace the explicit backup stubs with staged validated import/export.
+Proceed from the M10-complete state with M11 only. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB. Do not introduce dual writes. M11 should compose the existing profile barrier, `TypingEngine`, `TypingSurface`, transient audio/feedback sinks, and `Repository.commitSession`; durable save acknowledgement is the finalization boundary. Keep an in-memory pending result on retryable failure. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.

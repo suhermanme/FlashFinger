@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: `2026-09-20T23:49:34Z` (UTC)
+Last updated: `2026-09-21T08:09:03Z` (UTC)
 
 ## Completed prompts
 
@@ -117,7 +117,7 @@ Architecture notes:
 - Zero React/DOM/audio/storage dependencies — pure TypeScript domain logic.
 - Engine uses absolute monotonic clock (BASE_NOW) for deterministic testing.
 - EditLedger uses bounded circular buffer with MAX_CORRECTION_HISTORY=512 cap.
-- TextBuffer uses grapheme-aware array (spread operator `[...text]`) for emoji support.
+- TextBuffer uses `Intl.Segmenter` grapheme arrays for emoji and combining-sequence support.
 - All metric formulas return `null` on zero denominators.
 - `computeSample` guards `windowMs <= 0` returning `null` before calling sub-calculations.
 - No mutable global state in engine — all counters and state are instance fields.
@@ -207,10 +207,65 @@ Verification limits:
 - Actual sudden power loss, hardware write-cache behavior, physical disk-full, and permission transitions were not available. ENOSPC/EDQUOT and permission errors are mapped but not induced against a real volume.
 - Import/export remains intentionally `unsupported` until M16.
 
+### M06 — Profile orchestration and Zustand stores
+
+Status: **complete**.
+
+Implemented vanilla Zustand app/profile/settings/runtime stores, an injected-repository `ProfileCoordinator`, and the profile CRUD surface. Profile hydration publishes profile-owned settings and resets runtime state behind a generation fence; slow obsolete requests cannot overwrite the new profile. Active sessions and unsaved final results block switching and deletion. Settings saves remain dirty on failure and late results cannot leak into the newly selected profile. Runtime metric snapshots are capped at one publication per 250 ms.
+
+Outputs: `src/state/{app,profiles,settings,runtime}.ts`, `src/app/profileCoordinator.ts`, `src/features/profiles/`, and `tests/integration/profile-switch.test.ts`.
+
+### M07 — Theme and accessible shell
+
+Status: **complete**.
+
+Implemented semantic Tailwind/CSS tokens for light/dark/high-contrast presentation, system and explicit theme/motion resolution, a tiny first-paint theme hint, immutable token snapshots for imperative/canvas consumers, scalable shell layout, skip navigation, and shared button/dialog/navigation controls. Explicit palette choices avoid redundant computed-style reads when the OS palette changes; listeners are removed on teardown. Appearance settings use scalar Zustand selectors.
+
+Outputs: `src/styles/{index,themes}.css`, `src/app/themeController.ts`, `src/components/{Button,Dialog,Navigation}.tsx`, `src/features/settings/AppearanceSettings.tsx`, updated `src/app/{App,bootstrap}.tsx` and `index.html`, and `tests/integration/theme-accessibility.test.tsx`.
+
+### M08 — Native input adapter and bounded text viewport
+
+Status: **complete**.
+
+Implemented native `beforeinput`/composition normalization, shortcut/paste/drop/replacement rejection, held-key policy, bounded repeat Backspace, focus/visibility/resize pause paths, grapheme-aware layout, a five-line/2,048-grapheme mounted window, cached caret coordinates, and imperative character/caret mutation without a React commit per key. IME composition UI is not prevented; matching browser echo events are deduplicated without consuming the next unrelated input. Renderer remounts preserve correctness state. The engine correction fence now uses the last accepted high-water position and the 512-grapheme policy; strict retries replace retained output without erasing attempt history.
+
+Outputs: `src/features/typing/{TypingSurface,inputAdapter}.tsx`, `src/engines/visual/{textRenderer,layout,caret}.ts`, `tests/integration/typing-surface.test.tsx`, and the initial synthetic trace in `tests/performance/input-feedback.test.ts` / `docs/PERFORMANCE_BASELINE.md`.
+
+### M09 — Low-latency audio and feasibility spike
+
+Status: **complete for the implementation spike; physical-output qualification remains open**.
+
+Implemented lazy gesture-time `AudioContext` creation with interactive latency preference, local manifest/hash verification, predecoded immutable buffers, two-pack/16 MiB cache bounds, a 24-voice cap, 5 ms oldest-voice fadeout, mute/suspension/failure/close states, retry-safe failed-context cleanup, direct input-commit categorization, and a generated CC0 test pack. No fetch, decode, IPC, or storage work occurs in `trigger()`.
+
+Outputs: `src/engines/audio/{context,soundBank,voices}.ts`, `public/assets/sounds/test-pack/`, `public/content/sound-packs.json`, `tests/integration/audio.test.ts`, the native harness under `tests/performance/`, and `docs/PERFORMANCE_BASELINE.md`.
+
+Native headless results for 10,000 already-decoded one-shot triggers: Chrome 153 p99 0.20 ms/max 2.20 ms; Electron 44 p99 0.20 ms/max 4.50 ms. These are API-scheduling measurements, not physical audible-onset results. The generated feasibility pack uses tiny checked PCM-JSON fixtures; release sound-pack work should replace it with production-quality locally licensed WAV assets without changing the bounded runtime contract.
+
+### M10 — Bounded feedback effects
+
+Status: **complete**.
+
+Implemented coalesced frame scheduling, optional 32 ms caret interpolation, 60–90 ms bounded key pulses, a fixed pool of at most 24 completion particles, 220 ms completion state, reduced-motion static feedback, and pause/unmount cancellation. Essential character/caret updates remain synchronous and perform no layout reads. Overflow audio fade nodes now stay connected until their scheduled stop completes.
+
+Outputs: `src/engines/visual/{effects,keyFeedback,motion}.ts`, minimal `TypingSurface` feedback injection, `tests/integration/effect-lifecycle.test.tsx`, and the repeated M08–M10 performance scenario.
+
+## M06–M10 verification evidence
+
+Commands run on 2026-09-21 UTC:
+
+| Command | Exit | Outcome |
+|---|---:|---|
+| `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
+| `npm test -- --reporter=dot` | 0 | 11/11 files and 199/199 tests pass, including native Chrome IndexedDB coverage. |
+| `npm run build` | 0 | Renderer build passes: JS 272.06 kB / 82.51 kB gzip; CSS 15.87 kB / 4.17 kB gzip; total renderer tree 291,518 bytes. |
+| `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
+| Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
+| Native Electron audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 4.50 ms. |
+
 ## Known limitations and next eligible prompt
 
-Desktop now uses the IPC-backed durable repository; browser remains IndexedDB-only. The typing engine and repositories are not yet joined by session/profile UI. The static M02 shell copy should be replaced when the owning UI prompt runs.
+Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M06–M10 provide profile/state, theme, input/viewport, audio, and bounded feedback primitives, but the shell does not yet start and durably finalize a real session. M11 owns that coordinator and result UI.
 
-Repository-wide typecheck, tests, renderer build, and Electron compile pass. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
+Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-M05 stops here. Continue only with a subsequent design prompt; do not expand this milestone into UI or backup work.
+The next eligible prompt is **M11 — Session lifecycle and durable result integration**. It must use `Repository.commitSession` acknowledgement as the durable finalization boundary and retain an in-memory pending result across retryable save failures.

@@ -1,0 +1,35 @@
+{
+  "manifestVersion": 1,
+  "packs": [
+    {
+      "id": "test-soft",
+      "version": "1",
+      "name": "Generated test tones",
+      "license": "CC0-1.0",
+      "attribution": "Generated mathematically for FlashFinger; no third-party recording.",
+      "format": "pcm-json",
+      "samples": {
+        "letter": [
+          { "path": "assets/sounds/test-pack/tone-low.pcm.json", "sha256": "3f6dd39f4cbfa13a2cc9f1127987fa0081cafe8a60e8c4f2eded2be029dbfbee", "durationMs": 2.5, "gain": 0.45 },
+          { "path": "assets/sounds/test-pack/tone-high.pcm.json", "sha256": "50af0de5a529d040ca06e0fbda37596b124b235ec52b85aa80e71e4cb54a58e6", "durationMs": 2.25, "gain": 0.38 }
+        ],
+        "space": [
+          { "path": "assets/sounds/test-pack/tone-low.pcm.json", "sha256": "3f6dd39f4cbfa13a2cc9f1127987fa0081cafe8a60e8c4f2eded2be029dbfbee", "durationMs": 2.5, "gain": 0.32 },
+          { "path": "assets/sounds/test-pack/tone-high.pcm.json", "sha256": "50af0de5a529d040ca06e0fbda37596b124b235ec52b85aa80e71e4cb54a58e6", "durationMs": 2.25, "gain": 0.28 }
+        ],
+        "enter": [
+          { "path": "assets/sounds/test-pack/tone-high.pcm.json", "sha256": "50af0de5a529d040ca06e0fbda37596b124b235ec52b85aa80e71e4cb54a58e6", "durationMs": 2.25, "gain": 0.4 },
+          { "path": "assets/sounds/test-pack/tone-low.pcm.json", "sha256": "3f6dd39f4cbfa13a2cc9f1127987fa0081cafe8a60e8c4f2eded2be029dbfbee", "durationMs": 2.5, "gain": 0.36 }
+        ],
+        "backspace": [
+          { "path": "assets/sounds/test-pack/tone-low.pcm.json", "sha256": "3f6dd39f4cbfa13a2cc9f1127987fa0081cafe8a60e8c4f2eded2be029dbfbee", "durationMs": 2.5, "gain": 0.3 },
+          { "path": "assets/sounds/test-pack/tone-high.pcm.json", "sha256": "50af0de5a529d040ca06e0fbda37596b124b235ec52b85aa80e71e4cb54a58e6", "durationMs": 2.25, "gain": 0.26 }
+        ],
+        "error": [
+          { "path": "assets/sounds/test-pack/tone-high.pcm.json", "sha256": "50af0de5a529d040ca06e0fbda37596b124b235ec52b85aa80e71e4cb54a58e6", "durationMs": 2.25, "gain": 0.25 },
+          { "path": "assets/sounds/test-pack/tone-low.pcm.json", "sha256": "3f6dd39f4cbfa13a2cc9f1127987fa0081cafe8a60e8c4f2eded2be029dbfbee", "durationMs": 2.5, "gain": 0.22 }
+        ]
+      }
+    }
+  ]
+}

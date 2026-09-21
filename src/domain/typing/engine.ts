@@ -24,7 +24,7 @@ import type {
   SessionEndDelta,
   TerminationRule,
 } from './types.js';
-import { MAX_TEXT_WINDOW } from './types.js';
+import { MAX_CORRECTION_HISTORY } from './types.js';
 
 import { EditLedger } from './ledger.js';
 import * as clock from './clock.js';
@@ -348,6 +348,19 @@ export class TypingEngine {
     const expected = this.textBuffer.getExpected(cursor);
     const correct = grapheme === expected;
 
+    // Strict mode can accept several attempts at the same target position.
+    // Only the latest value is retained, while every attempt remains in the
+    // historical C/E counters. Remove the replaced value from retained output
+    // before installing the new one.
+    const replaced = this.textBuffer.buffer[cursor];
+    if (replaced !== undefined) {
+      if (replaced === expected) {
+        this.retainedCorrect = Math.max(0, this.retainedCorrect - 1);
+      } else {
+        this.retainedErrors = Math.max(0, this.retainedErrors - 1);
+      }
+    }
+
     // Apply the character
     this.textBuffer.buffer[cursor] = grapheme;
     this.attempts++;
@@ -367,6 +380,7 @@ export class TypingEngine {
 
     // Track position history for word counting
     this._positionHistory.push({ position: cursor, correct });
+    this._lastAcceptedPosition = Math.max(this._lastAcceptedPosition, cursor + 1);
 
     if (correct) {
       this.retainedCorrect++;
@@ -422,7 +436,7 @@ export class TypingEngine {
 
     // Check correction window (512 grapheme boundary)
     // deletePos must be within cursor's correction window
-    const correctionWindowStart = Math.max(0, cursor - MAX_TEXT_WINDOW);
+    const correctionWindowStart = Math.max(0, this._lastAcceptedPosition - MAX_CORRECTION_HISTORY);
     if (deletePos < correctionWindowStart) {
       return [{ kind: 'rejected', reason: 'not-editable' }];
     }

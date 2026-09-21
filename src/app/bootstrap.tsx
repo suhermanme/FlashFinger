@@ -7,6 +7,7 @@
 
 import { createRoot } from 'react-dom/client';
 import { App } from './App.js';
+import '../styles/index.css';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {

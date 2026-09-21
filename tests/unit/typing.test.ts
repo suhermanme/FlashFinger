@@ -278,6 +278,17 @@ describe('M03 — Correction policies', () => {
     e.processCommand(charCmd('a'));
     expect(e.getCounters().textCursor).toBe(1);
   });
+
+  it('strict: retries replace retained output without erasing attempt history', () => {
+    const e = new TypingEngine(makeSource('ab', 'strict'));
+    e.transitionToPreparing();
+    e.transitionToReady();
+    e.processCommand(charCmd('x'));
+    e.processCommand(charCmd('y'));
+    expect(e.getCounters()).toMatchObject({ attempts: 2, errorAttempts: 2, retainedErrors: 1, textCursor: 0 });
+    e.processCommand(charCmd('a'));
+    expect(e.getCounters()).toMatchObject({ attempts: 3, correctAttempts: 1, errorAttempts: 2, retainedCorrect: 1, retainedErrors: 0, textCursor: 1 });
+  });
 });
 
 // ===================================================================
