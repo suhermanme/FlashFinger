@@ -244,6 +244,17 @@ export class TypingEngine {
     this.state = 'running';
   }
 
+  /** Align the session clock to the first scored input. Coordinators call this
+   * immediately before dispatching that input; direct engine consumers retain
+   * the explicit clock semantics used by the pure-domain API. */
+  synchronizeStart(nowMs: number): void {
+    if (this.state !== 'ready') return;
+    clock.resetClock(nowMs);
+    if (this.termination.kind === 'duration') {
+      clock.setDeadline(nowMs + this.termination.durationMs);
+    }
+  }
+
   /**
    * Pause: running ↔ paused.
    */
@@ -292,11 +303,8 @@ export class TypingEngine {
     }
 
     if (cmd.kind === 'pause') {
-      const isPaused = this.togglePause();
-      return [
-        { kind: 'progress', textCursor: this.textBuffer.cursor, activeElapsedMs: this.activeElapsedMs },
-        { kind: isPaused ? 'progress' : 'progress', textCursor: this.textBuffer.cursor, activeElapsedMs: this.activeElapsedMs },
-      ];
+      this.togglePause();
+      return [{ kind: 'progress', textCursor: this.textBuffer.cursor, activeElapsedMs: this.activeElapsedMs }];
     }
 
     // Only accept character/delete in running state

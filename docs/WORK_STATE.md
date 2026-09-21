@@ -1,9 +1,9 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-21T08:09:03Z` (UTC)
+Last updated: `2026-09-21T08:50:54Z` (UTC)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
-Repository state: working tree contains the completed M06–M10 tranche on top of committed M01–M05; changes remain uncommitted.
+Repository state: M01–M10 are committed (`3450bc9` is the M06–M10 tranche); the completed M11 changes are present and uncommitted.
 
 ## Current status
 
@@ -17,8 +17,9 @@ Repository state: working tree contains the completed M06–M10 tranche on top o
 **M08 — Native input adapter and text viewport is complete.**
 **M09 — Low-latency audio implementation/feasibility spike is complete; physical-output qualification remains open.**
 **M10 — Bounded feedback effects is complete.**
+**M11 — Session lifecycle and durable result integration is complete.**
 
-The next eligible prompt is M11, session lifecycle and durable result integration.
+The next eligible prompts are M12 lessons, M13 practice, and M14 custom text.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -97,13 +98,25 @@ IPC uses one raw transport channel with a closed method whitelist, 8 MiB JSON re
 
 Profile requests are generation-fenced; active/unsaved work blocks destructive profile transitions; metrics publish at no more than 4 Hz. Theme snapshots resolve semantic CSS tokens once per actual palette/motion change. Input is normalized through a native textarea and the imperative viewport mounts at most five lines/2,048 graphemes while preserving state across remounts. Audio is gesture-created, prepared ahead of ready, bounded to two decoded packs/16 MiB and 24 voices, and fails closed to muted training. Optional completion/key/caret motion is pooled, reduced-motion aware, and cancelled on pause/unmount.
 
+## Completed M11 outputs
+
+- Coordinator: `src/app/sessionCoordinator.ts`
+- Final record/day-slice construction: `src/domain/metrics/sessionSummary.ts`
+- Session/result UI: `src/features/typing/{SessionScreen,ResultScreen}.tsx`
+- Lifecycle integration: `tests/integration/session-lifecycle.test.ts`
+- Screen integration: `tests/integration/session-screen.test.tsx`
+
+The coordinator freezes one prepared source/configuration, starts timing on the first accepted input, excludes pause time, checkpoints after five active seconds and on pause, and performs checkpoint work outside the input turn. Final results do not become completed/saved until `Repository.commitSession` acknowledges durability. A retryable failure retains the exact pending `SessionCommit` and UUID; explicit discard is the only path that releases an unsaved result. Browser ownership is acquired before ready and released after acknowledgement or discard. Day slices split active time at local calendar boundaries, and recovery exposes keep/discard handling for interrupted checkpoints.
+
+Checkpoint schema v1 lacks exact completed-word and retained-error counters plus the original start instant. Recovery documents and applies conservative reconstruction; a future schema revision is needed for exact interrupted-session analytics.
+
 ## Last verification
 
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test -- --reporter=dot` | 0 | 11/11 test files and 199/199 tests pass, including native headless-Chrome IndexedDB coverage and the M06–M10 suites. |
-| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 272.06 kB / 82.51 kB gzip and CSS is 15.87 kB / 4.17 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 13/13 test files and 209/209 tests pass, including native headless-Chrome IndexedDB and M11 lifecycle/UI coverage. |
+| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 272.06 kB / 82.51 kB gzip and CSS is 17.02 kB / 4.44 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
 | Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
 | Native Electron scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 4.50 ms. |
@@ -124,4 +137,4 @@ The initial sandboxed `npm test` attempt exited 1 with 144/145 passing because t
 
 ## Next handover action
 
-Proceed from the M10-complete state with M11 only. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB. Do not introduce dual writes. M11 should compose the existing profile barrier, `TypingEngine`, `TypingSurface`, transient audio/feedback sinks, and `Repository.commitSession`; durable save acknowledgement is the finalization boundary. Keep an in-memory pending result on retryable failure. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.
+Proceed with one of M12–M14. Supply its fixed `TrainingSource` to the M11 coordinator rather than adding another session lifecycle. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.

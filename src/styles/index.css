@@ -54,6 +54,12 @@ button, input, select, textarea { font: inherit; }
 @keyframes ff-completion-bounce { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.018); } }
 .ff-native-input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0.01; inset-inline-start: 0; inset-block-start: 0; }
 .ff-sr-live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.ff-session-heading, .ff-session-controls, .ff-result-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ff-space-3); }
+.ff-session-metrics, .ff-result-metrics { display: flex; flex-wrap: wrap; gap: var(--ff-space-6); padding: 0; }
+.ff-session-metrics div, .ff-result-metrics div { min-width: 7rem; }
+.ff-session-metrics dt, .ff-result-metrics dt { color: var(--ff-text-muted); }
+.ff-session-metrics dd, .ff-result-metrics dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; }
+.ff-save-error { color: var(--ff-typing-error); text-decoration: underline currentColor; }
 
 @media (max-width: 40rem) { .ff-shell { padding: var(--ff-space-3); } .ff-card { padding: var(--ff-space-4); } .ff-nav-list { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }

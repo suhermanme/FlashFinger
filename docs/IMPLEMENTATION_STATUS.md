@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: `2026-09-21T08:09:03Z` (UTC)
+Last updated: `2026-09-21T08:50:54Z` (UTC)
 
 ## Completed prompts
 
@@ -249,23 +249,35 @@ Implemented coalesced frame scheduling, optional 32 ms caret interpolation, 60�
 
 Outputs: `src/engines/visual/{effects,keyFeedback,motion}.ts`, minimal `TypingSurface` feedback injection, `tests/integration/effect-lifecycle.test.tsx`, and the repeated M08–M10 performance scenario.
 
-## M06–M10 verification evidence
+### M11 — Session lifecycle and durable result integration
+
+Status: **complete**.
+
+Implemented a shared `SessionCoordinator` that fixes and freezes the prepared source/configuration, starts elapsed time on the first accepted character, excludes paused time, writes recoverable checkpoints outside the input turn, and treats `Repository.commitSession` acknowledgement as the only successful finalization boundary. Failed saves retain the result and exact pending commit in memory; retry reuses the same session UUID and commit object, so repository idempotency prevents duplicate derived effects. Browser-capable repositories acquire per-profile ownership before ready and release it only after durable save or explicit discard.
+
+Outputs: `src/app/sessionCoordinator.ts`, `src/domain/metrics/sessionSummary.ts`, `src/features/typing/{SessionScreen,ResultScreen}.tsx`, updates to `TypingSurface`/`TypingEngine`, `tests/integration/session-lifecycle.test.ts`, and `tests/integration/session-screen.test.tsx` (10 tests total).
+
+Lifecycle coverage includes first-input start, pause exclusion, immutable configuration, five-second/pause checkpoint cadence, delayed acknowledgement, quota failure, unsaved-result profile barriers, exact retry identity/idempotency, checkpoint keep/discard recovery, timed late-input rejection, browser ownership acquire/release, local-midnight day-slice splitting, a real desktop journal commit, and screen transition to a durably saved result.
+
+Schema-v1 checkpoints do not contain `completedWords`, `retainedErrors`, or the original `startedAt`. Interrupted-session recovery therefore reconstructs `startedAt` from checkpoint time minus active time, derives retained errors conservatively from the bounded retained edit window, and records zero completed words. A future checkpoint schema migration should persist these counters directly if exact interrupted analytics are required.
+
+## M06–M11 verification evidence
 
 Commands run on 2026-09-21 UTC:
 
 | Command | Exit | Outcome |
 |---|---:|---|
 | `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
-| `npm test -- --reporter=dot` | 0 | 11/11 files and 199/199 tests pass, including native Chrome IndexedDB coverage. |
-| `npm run build` | 0 | Renderer build passes: JS 272.06 kB / 82.51 kB gzip; CSS 15.87 kB / 4.17 kB gzip; total renderer tree 291,518 bytes. |
+| `npm test -- --reporter=dot` | 0 | 13/13 files and 209/209 tests pass, including native Chrome IndexedDB and M11 lifecycle/screen coverage. |
+| `npm run build` | 0 | Renderer build passes: JS 272.06 kB / 82.51 kB gzip; CSS 17.02 kB / 4.44 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
 | Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
 | Native Electron audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 4.50 ms. |
 
 ## Known limitations and next eligible prompt
 
-Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M06–M10 provide profile/state, theme, input/viewport, audio, and bounded feedback primitives, but the shell does not yet start and durably finalize a real session. M11 owns that coordinator and result UI.
+Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M11 now provides the shared coordinator and result UI, while M12–M14 provide the concrete lesson, practice, and custom-text setup flows that will supply it with production training sources.
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-The next eligible prompt is **M11 — Session lifecycle and durable result integration**. It must use `Repository.commitSession` acknowledgement as the durable finalization boundary and retain an in-memory pending result across retryable save failures.
+The next eligible prompts are **M12 — Lessons slice**, **M13 — Practice slice**, and **M14 — Custom-text slice**. Each must use the M11 coordinator and preserve its fixed-source, checkpoint, ownership, and durable-finalization contracts.

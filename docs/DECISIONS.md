@@ -199,3 +199,12 @@ Status: accepted in M10
 Correctness classes and caret destination update in the input turn. Decorative caret, key, and completion work uses a coalescing frame scheduler, fixed particle/voice bounds, and cancellation on pause/unmount. Reduced motion retains static correctness state while disabling interpolation, bounce, and particles.
 
 Migration impact: later session screens may inject these controllers into `TypingSurface`, but ordinary input must not allocate particles, wait for animation frames, or introduce layout reads. New decorative work must share the bounded scheduler or prove an equivalent cap.
+
+## D-023 — Make repository acknowledgement the session finalization boundary
+
+Date: 2026-09-21
+Status: accepted in M11
+
+`SessionCoordinator` owns one deeply frozen prepared source/configuration and the complete ready-to-result lifecycle. It starts the engine clock on the first accepted character, performs checkpoint writes outside the input turn every five active seconds and on pause, and keeps the result in `finalizing` until `Repository.commitSession` acknowledges the atomic finalized commit. A failed save retains the exact `SessionCommit` object and session UUID for retry; only acknowledgement marks it saved, while explicit discard is required to abandon it. Browser-capable repositories acquire fenced profile ownership before ready and release it after acknowledgement or discard.
+
+Migration impact: M12–M14 must supply sources to this coordinator rather than duplicate lifecycle/save logic. New final effects must remain inside the repository's idempotent commit envelope. Checkpoint schema v1 omits `completedWords`, `retainedErrors`, and original `startedAt`, so exact interrupted analytics require a future schema migration; the current recovery path reconstructs these values conservatively and documents that limitation.

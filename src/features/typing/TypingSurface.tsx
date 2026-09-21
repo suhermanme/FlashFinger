@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import type { TypingEngine } from '../../domain/typing/engine.js';
 import type { EngineDelta } from '../../domain/typing/types.js';
-import type { InputSink } from './inputAdapter.js';
+import type { InputEngine, InputSink } from './inputAdapter.js';
 import { InputAdapter } from './inputAdapter.js';
 import { TextRenderer } from '../../engines/visual/textRenderer.js';
 
@@ -11,7 +10,7 @@ export interface TypingFeedback {
   pause?(): void;
   cancel?(): void;
 }
-export interface TypingSurfaceProps { engine: TypingEngine; targetText: string; sink?: InputSink; feedback?: TypingFeedback; accessibleLabel?: string }
+export interface TypingSurfaceProps { engine: InputEngine; targetText: string; sink?: InputSink; feedback?: TypingFeedback; accessibleLabel?: string }
 const SILENT_SINK: InputSink = { onCommit: () => undefined };
 
 export function TypingSurface({ engine, targetText, sink = SILENT_SINK, feedback, accessibleLabel = 'Typing input' }: TypingSurfaceProps) {
