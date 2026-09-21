@@ -30,16 +30,16 @@ const PROFILES: Record<KeyboardSoundProfile, SoundProfile> = {
     up: { waveform: 'square', frequency: 3_200, durationMs: 25, filterType: 'bandpass', filterFrequency: 3_500, filterQ: 2, gain: .25 },
   },
   thocky: {
-    down: { waveform: 'sine', frequency: 138, durationMs: 82, filterType: 'lowpass', filterFrequency: 430, filterQ: .8, gain: .58 },
-    up: { waveform: 'sine', frequency: 96, durationMs: 42, filterType: 'lowpass', filterFrequency: 320, filterQ: .6, gain: .22 },
+    down: { waveform: 'sine', frequency: 138, durationMs: 82, filterType: 'lowpass', filterFrequency: 430, filterQ: .8, gain: .78 },
+    up: { waveform: 'sine', frequency: 96, durationMs: 42, filterType: 'lowpass', filterFrequency: 320, filterQ: .6, gain: .32 },
   },
   tactile: {
-    down: { waveform: 'sawtooth', frequency: 450, durationMs: 25, filterType: 'lowpass', filterFrequency: 800, filterQ: 1, gain: .4 },
-    up: { waveform: 'sine', frequency: 300, durationMs: 15, filterType: 'lowpass', filterFrequency: 500, filterQ: 1, gain: .15 },
+    down: { waveform: 'sawtooth', frequency: 450, durationMs: 25, filterType: 'lowpass', filterFrequency: 800, filterQ: 1, gain: .62 },
+    up: { waveform: 'sine', frequency: 300, durationMs: 15, filterType: 'lowpass', filterFrequency: 500, filterQ: 1, gain: .26 },
   },
   linear: {
-    down: { waveform: 'sine', frequency: 600, durationMs: 20, filterType: 'lowpass', filterFrequency: 1_000, filterQ: .5, gain: .2 },
-    up: { waveform: 'sine', frequency: 500, durationMs: 12, filterType: 'lowpass', filterFrequency: 800, filterQ: .5, gain: .12 },
+    down: { waveform: 'sine', frequency: 600, durationMs: 20, filterType: 'lowpass', filterFrequency: 1_000, filterQ: .5, gain: .42 },
+    up: { waveform: 'sine', frequency: 500, durationMs: 12, filterType: 'lowpass', filterFrequency: 800, filterQ: .5, gain: .22 },
   },
 };
 
@@ -97,7 +97,7 @@ export class KeyboardSoundPlayer {
       oscillator.type = kind === 'complete' ? 'sine' : 'triangle';
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(.0001, start);
-      gain.gain.linearRampToValueAtTime(this.volume * (kind === 'mistake' ? .32 : .3), start + .008);
+      gain.gain.linearRampToValueAtTime(this.volume * (kind === 'mistake' ? .5 : .3), start + .008);
       gain.gain.exponentialRampToValueAtTime(.0001, stop);
       oscillator.connect(gain).connect(this.compressor!);
       this.track(oscillator, gain);

@@ -23,7 +23,7 @@ import { createProfilesStore } from '../state/profiles.js';
 import { createSettingsStore } from '../state/settings.js';
 import { createRuntimeStore } from '../state/runtime.js';
 import type { ProfileSettings } from '../contracts/models.js';
-import { KEYBOARD_SOUND_PROFILES, type KeyboardSoundProfile } from '../engines/audio/keyboardSynth.js';
+import { KEYBOARD_SOUND_PROFILES, KeyboardSoundPlayer, type KeyboardSoundProfile } from '../engines/audio/keyboardSynth.js';
 import { persistPracticeResult, type PracticeResultSummary } from './practicePersistence.js';
 
 type View = 'practice' | 'lessons' | 'history' | 'analytics' | 'profiles' | 'settings';
@@ -178,11 +178,27 @@ interface SettingsProps {
 }
 
 function Settings({ theme, setTheme, fontSize, setFontSize, showKeyboard, setShowKeyboard, soundEnabled, setSoundEnabled, soundProfile, setSoundProfile, soundVolume, setSoundVolume, paceGuideMode, setPaceGuideMode, targetWpm, setTargetWpm }: SettingsProps) {
+  const previewPlayer = useRef<KeyboardSoundPlayer | null>(null);
+  const previewTimer = useRef<number | null>(null);
+  const [previewingSound, setPreviewingSound] = useState(false);
+  useEffect(() => () => {
+    if (previewTimer.current !== null) window.clearTimeout(previewTimer.current);
+    void previewPlayer.current?.close();
+  }, []);
+  const previewSound = () => {
+    const player = previewPlayer.current ??= new KeyboardSoundPlayer();
+    setPreviewingSound(true);
+    void player.playKey('letter', 'down', soundProfile, soundVolume);
+    previewTimer.current = window.setTimeout(() => {
+      void player.playKey('letter', 'up', soundProfile, soundVolume);
+      previewTimer.current = window.setTimeout(() => setPreviewingSound(false), 240);
+    }, 80);
+  };
   return <section className="ff-settings-page ff-view-enter" aria-labelledby="settings-heading">
     <div className="ff-page-heading"><span className="ff-eyebrow">Workspace</span><h2 id="settings-heading">Settings</h2><p>Shape the typing experience around the way you work.</p></div>
     <div className="ff-settings-grid">
       <section className="ff-card"><h3>Appearance</h3><label className="ff-field">Theme<select value={theme} onChange={(event) => setTheme(event.target.value as 'light' | 'dark')}><option value="light">Light</option><option value="dark">Dark</option></select></label><label className="ff-field">Typing text size <output>{fontSize}px</output><input type="range" min="20" max="48" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} /></label></section>
-      <section className="ff-card"><h3>Keyboard sound</h3><div className="ff-sound-profiles" role="radiogroup" aria-label="Keyboard sound">{KEYBOARD_SOUND_PROFILES.map((profile) => <label key={profile.id} className={soundProfile === profile.id ? 'ff-sound-profile ff-sound-profile-active' : 'ff-sound-profile'}><input type="radio" name="sound-profile" value={profile.id} checked={soundProfile === profile.id} onChange={() => setSoundProfile(profile.id)} /><span><strong>{profile.name}</strong><small>{profile.description}</small></span></label>)}</div><label className="ff-volume-control"><span>Volume <output>{Math.round(soundVolume * 100)}%</output></span><input aria-label="Sound volume" type="range" min="0" max="100" value={Math.round(soundVolume * 100)} onChange={(event) => setSoundVolume(Number(event.target.value) / 100)} /></label><label className="ff-setting-toggle"><input type="checkbox" checked={soundEnabled} onChange={(event) => setSoundEnabled(event.target.checked)} /> Play typing sounds</label></section>
+      <section className="ff-card"><h3>Keyboard sound</h3><div className="ff-sound-profiles" role="radiogroup" aria-label="Keyboard sound">{KEYBOARD_SOUND_PROFILES.map((profile) => <label key={profile.id} className={soundProfile === profile.id ? 'ff-sound-profile ff-sound-profile-active' : 'ff-sound-profile'}><input type="radio" name="sound-profile" value={profile.id} checked={soundProfile === profile.id} onChange={() => setSoundProfile(profile.id)} /><span><strong>{profile.name}</strong><small>{profile.description}</small></span></label>)}</div><label className="ff-volume-control"><span>Volume <output>{Math.round(soundVolume * 100)}%</output></span><input aria-label="Sound volume" type="range" min="0" max="100" value={Math.round(soundVolume * 100)} onChange={(event) => setSoundVolume(Number(event.target.value) / 100)} /></label><div className="ff-sound-preview"><button className="ff-button" type="button" onClick={previewSound} disabled={soundVolume === 0} aria-label={`Test ${soundProfile} sound`}>{previewingSound ? 'Playing preview…' : '▶ Test sound'}</button><span role="status" aria-live="polite">{soundVolume === 0 ? 'Raise the volume to preview.' : previewingSound ? `Previewing ${soundProfile} sound` : 'Preview the selected profile.'}</span></div><label className="ff-setting-toggle"><input type="checkbox" checked={soundEnabled} onChange={(event) => setSoundEnabled(event.target.checked)} /> Play typing sounds</label></section>
       <section className="ff-card"><h3>Pace guide</h3><label className="ff-field">Compare live WPM with<select aria-label="Pace guide benchmark" value={paceGuideMode} onChange={(event) => setPaceGuideMode(event.target.value as PaceGuideMode)}><option value="target">My target</option><option value="average">Recent average</option><option value="best">Personal best</option></select></label><label className="ff-volume-control"><span>Target WPM <output>{targetWpm}</output></span><input aria-label="Target WPM" type="range" min="10" max="150" step="5" value={targetWpm} onChange={(event) => setTargetWpm(Number(event.target.value))} /></label><p className="ff-muted">The moving glow turns warm below pace and green when you meet it. Target WPM is used until profile history is available.</p></section>
       <section className="ff-card"><h3>Typing experience</h3><label className="ff-setting-toggle"><input type="checkbox" checked={showKeyboard} onChange={(event) => setShowKeyboard(event.target.checked)} /> Show keyboard overlay</label><p className="ff-muted">Changes apply immediately to practice and lesson sessions.</p></section>
     </div>

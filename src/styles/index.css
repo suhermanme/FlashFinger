@@ -220,6 +220,8 @@ button, input, select, textarea { font: inherit; }
 .ff-volume-control > span { display: flex; justify-content: space-between; color: var(--ff-text-secondary); }
 .ff-volume-control output { color: var(--ff-action-accent); font-variant-numeric: tabular-nums; font-weight: 700; }
 .ff-volume-control input { width: 100%; accent-color: var(--ff-action-accent); }
+.ff-sound-preview { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ff-space-3); margin-block: var(--ff-space-4); }
+.ff-sound-preview > span { color: var(--ff-text-muted); font-size: .78rem; }
 #profiles-heading + ul, [aria-labelledby='profiles-heading'] > ul { display: grid; gap: var(--ff-space-2); padding: 0; list-style: none; }
 [aria-labelledby='profiles-heading'] > ul li { display: grid; grid-template-columns: 1fr auto auto; gap: var(--ff-space-2); padding: var(--ff-space-3); border: 1px solid var(--ff-surface-border); border-radius: var(--ff-radius-control); }
 [aria-labelledby='profiles-heading'] > ul button, [aria-labelledby='profiles-heading'] > form button { min-height: 2.5rem; border: 1px solid var(--ff-surface-border); border-radius: var(--ff-radius-control); background: var(--ff-surface-raised); color: var(--ff-text-primary); padding-inline: var(--ff-space-3); cursor: pointer; }

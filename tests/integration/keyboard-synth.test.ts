@@ -53,6 +53,6 @@ describe('procedural keyboard sound', () => {
     expect(oscillators).toHaveLength(2);
     expect(oscillators.map((voice) => voice.type)).toEqual(['triangle', 'triangle']);
     expect(oscillators.map((voice) => voice.frequency.value)).toEqual([220, 146.83]);
-    expect(gains[0].gain.linearRampToValueAtTime.mock.calls[0][0]).toBeCloseTo(.256);
+    expect(gains[0].gain.linearRampToValueAtTime.mock.calls[0][0]).toBeCloseTo(.4);
   });
 });

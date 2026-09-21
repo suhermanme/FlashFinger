@@ -103,9 +103,9 @@ describe('M07 accessible shell primitives', () => {
   it('meets text contrast targets and uses scalable layout units for 200% zoom', () => {
     expect(contrast('#20242a', '#fffaf2')).toBeGreaterThanOrEqual(4.5);
     expect(contrast('#626a73', '#fffaf2')).toBeGreaterThanOrEqual(4.5);
-    expect(contrast('#ffffff', '#08766d')).toBeGreaterThanOrEqual(4.5);
-    expect(contrast('#f5f2ea', '#15191c')).toBeGreaterThanOrEqual(4.5);
-    expect(contrast('#aeb7b7', '#15191c')).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#ffffff', '#2563eb')).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#e8e6f0', '#15151d')).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#c7c5d2', '#15151d')).toBeGreaterThanOrEqual(4.5);
     const css = readFileSync(path.resolve(__dirname, '../../src/styles/index.css'), 'utf8');
     expect(css).toContain('max-width: 72rem');
     expect(css).toContain('flex-wrap: wrap');
