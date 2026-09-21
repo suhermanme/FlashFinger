@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: `2026-09-21T08:50:54Z` (UTC)
+Last updated: `2026-09-21T09:17:32Z` (UTC)
 
 ## Completed prompts
 
@@ -261,23 +261,35 @@ Lifecycle coverage includes first-input start, pause exclusion, immutable config
 
 Schema-v1 checkpoints do not contain `completedWords`, `retainedErrors`, or the original `startedAt`. Interrupted-session recovery therefore reconstructs `startedAt` from checkpoint time minus active time, derives retained errors conservatively from the bounded retained edit window, and records zero completed words. A future checkpoint schema migration should persist these counters directly if exact interrupted analytics are required.
 
-## M06–M11 verification evidence
+### M12 — Lessons slice
+
+Status: **complete**.
+
+Implemented the complete versioned v1 lesson curriculum, deterministic seeded drill generation, pure qualification/progression logic, repository-backed selection, lesson-specific result explanations, and atomic lesson-progress integration in the shared session commit. The curriculum contains 26 lessons across all six planned stages with stage counts 5/2/6/6/5/2. Stage one covers F/J, D/K, S/L, A/semicolon, and home-row/space review; later stages add G/H, every upper/lower-row pair, capitals, punctuation, digits, sentences, and mixed prose. Stage-one targets are at least 120 graphemes and later targets at least 240.
+
+Outputs: `src/domain/training/{lessons,progression}.ts`, `src/features/lessons/`, `public/content/lessons/ff-curriculum-v1.json`, M12 extensions to `SessionCoordinator`/result UI, `tests/unit/curriculum.test.ts`, and `tests/integration/{lesson-flow.test.ts,lesson-screen.test.tsx}`.
+
+Asset validation rejects duplicate IDs, missing prerequisites, cycles, undersized targets, unknown finger hints, locked-key content, and new/review pool contamination. Seeded shuffled bags are reproducible and enforce 55–65% introduced-key positions around the specified 60/40 policy. Qualification requires a completed target, 15 active seconds, stage accuracy/speed gates, standard input, and no voluntary pause. Mastery is two qualifying sessions among the latest three completed attempts, remains sticky after later failures, and is committed atomically with the session. Explicit unchanged-lesson maps can project achievements to a new version while prior-version rows remain intact.
+
+## M06–M12 verification evidence
 
 Commands run on 2026-09-21 UTC:
 
 | Command | Exit | Outcome |
 |---|---:|---|
 | `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
-| `npm test -- --reporter=dot` | 0 | 13/13 files and 209/209 tests pass, including native Chrome IndexedDB and M11 lifecycle/screen coverage. |
-| `npm run build` | 0 | Renderer build passes: JS 272.06 kB / 82.51 kB gzip; CSS 17.02 kB / 4.44 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 16/16 files and 219/219 tests pass, including native Chrome IndexedDB and M12 curriculum/durable-flow/UI coverage. |
+| `npm run build` | 0 | Renderer build passes: JS 272.06 kB / 82.51 kB gzip; CSS 17.42 kB / 4.52 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
 | Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
 | Native Electron audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 4.50 ms. |
 
+One parallel verification attempt raced `npm test` against Vite replacing `dist/renderer`, so three M02 artifact-read assertions failed while all 216 other tests passed. Re-running the full suite after the build completed produced the passing 219/219 result above.
+
 ## Known limitations and next eligible prompt
 
-Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M11 now provides the shared coordinator and result UI, while M12–M14 provide the concrete lesson, practice, and custom-text setup flows that will supply it with production training sources.
+Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. M12 supplies lessons through the shared M11 coordinator; M13 and M14 still own the concrete practice and custom-text setup flows.
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-The next eligible prompts are **M12 — Lessons slice**, **M13 — Practice slice**, and **M14 — Custom-text slice**. Each must use the M11 coordinator and preserve its fixed-source, checkpoint, ownership, and durable-finalization contracts.
+The next eligible prompts are **M13 — Practice slice** and **M14 — Custom-text slice**. Each must use the M11 coordinator and preserve its checkpoint, ownership, and durable-finalization contracts.

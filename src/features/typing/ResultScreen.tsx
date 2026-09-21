@@ -1,5 +1,6 @@
 import type { DurableSessionResult } from '../../app/sessionCoordinator.js';
 import { Button } from '../../components/Button.js';
+import { LessonResult } from '../lessons/LessonResult.js';
 
 export interface ResultScreenProps {
   result: DurableSessionResult;
@@ -7,13 +8,16 @@ export interface ResultScreenProps {
   onRetrySave?(): void;
   onDiscardUnsaved?(): void;
   onRetrySession?(): void;
+  nextLessonTitle?: string;
+  onNextLesson?(): void;
 }
 
 function metric(value: number | null, suffix = ''): string {
   return value === null ? '—' : `${value.toFixed(1)}${suffix}`;
 }
 
-export function ResultScreen({ result, saving = false, onRetrySave, onDiscardUnsaved, onRetrySession }: ResultScreenProps) {
+export function ResultScreen({ result, saving = false, onRetrySave, onDiscardUnsaved, onRetrySession,
+  nextLessonTitle, onNextLesson }: ResultScreenProps) {
   const { session } = result;
   return <section className="ff-card" aria-labelledby="result-heading">
     <h2 id="result-heading">{session.status === 'completed' ? 'Session complete' : session.status === 'interrupted' ? 'Interrupted session saved' : 'Session ended'}</h2>
@@ -28,10 +32,13 @@ export function ResultScreen({ result, saving = false, onRetrySave, onDiscardUns
         ? result.alreadyCommitted ? 'Result was already safely stored.' : 'Result saved locally.'
         : `Result is still in memory and has not been saved${result.error ? `: ${result.error.message}` : '.'}`}
     </p>
+    {result.lessonEvaluation ? <LessonResult evaluation={result.lessonEvaluation}
+      highErrorKeys={result.highErrorKeys} nextLessonTitle={nextLessonTitle}
+      onRetry={onRetrySession} onNext={onNextLesson} /> : null}
     <div className="ff-result-actions">
       {!result.saved && !saving && onRetrySave ? <Button variant="primary" onClick={onRetrySave}>Retry save</Button> : null}
       {!result.saved && !saving && onDiscardUnsaved ? <Button onClick={onDiscardUnsaved}>Discard unsaved result</Button> : null}
-      {onRetrySession ? <Button onClick={onRetrySession}>Try again</Button> : null}
+      {!result.lessonEvaluation && onRetrySession ? <Button onClick={onRetrySession}>Try again</Button> : null}
     </div>
   </section>;
 }

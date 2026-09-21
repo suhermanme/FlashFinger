@@ -208,3 +208,14 @@ Status: accepted in M11
 `SessionCoordinator` owns one deeply frozen prepared source/configuration and the complete ready-to-result lifecycle. It starts the engine clock on the first accepted character, performs checkpoint writes outside the input turn every five active seconds and on pause, and keeps the result in `finalizing` until `Repository.commitSession` acknowledges the atomic finalized commit. A failed save retains the exact `SessionCommit` object and session UUID for retry; only acknowledgement marks it saved, while explicit discard is required to abandon it. Browser-capable repositories acquire fenced profile ownership before ready and release it after acknowledgement or discard.
 
 Migration impact: M12–M14 must supply sources to this coordinator rather than duplicate lifecycle/save logic. New final effects must remain inside the repository's idempotent commit envelope. Checkpoint schema v1 omits `completedWords`, `retainedErrors`, and original `startedAt`, so exact interrupted analytics require a future schema migration; the current recovery path reconstructs these values conservatively and documents that limitation.
+
+## D-024 — Derive lesson mastery inside the atomic session commit
+
+Date: 2026-09-21
+Status: accepted in M12
+
+Lesson content is a validated `ff-curriculum-v1` asset and produces an ordinary fixed `TrainingSource`. Its pure progress evaluator receives live voluntary-pause context at finalization. `SessionCoordinator` reads the existing versioned progress plus the latest completed attempts, derives the replacement row, and includes it in the same `commitSession` envelope as the session, slices, character sources, and aggregates. Repository session-UUID idempotency therefore also fences pass/mastery awards.
+
+Mastery requires two qualifying IDs among the latest three completed attempts but is intentionally sticky after it is earned. Curriculum versions use independent progress keys; old rows are retained, and achievements move forward only through an explicit unchanged-lesson map.
+
+Migration impact: future curriculum versions must declare mappings only for semantically unchanged lessons and persist projected rows without deleting the source version. Changes to qualification gates require a new curriculum version rather than reinterpretation of old attempts.

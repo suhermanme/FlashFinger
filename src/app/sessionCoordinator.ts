@@ -1,6 +1,7 @@
 import type {
   ActiveCheckpoint,
   CharacterExposure,
+  LessonProgress,
   MistakeBucket,
   ProfileId,
   SessionConfig,
@@ -17,6 +18,7 @@ import type {
 } from '../contracts/repository.js';
 import { validateSessionConfig } from '../contracts/validation.js';
 import type { TrainingSource } from '../contracts/training.js';
+import type { LessonEvaluation } from '../contracts/training.js';
 import { calculateMetrics } from '../domain/metrics/formulas.js';
 import {
   buildDaySlices,
@@ -27,6 +29,7 @@ import {
   snapshotFromCheckpoint,
   type DayCounterDraft,
 } from '../domain/metrics/sessionSummary.js';
+import { deriveLessonProgress } from '../domain/training/progression.js';
 import { TypingEngine } from '../domain/typing/engine.js';
 import type { EngineCommand, EngineDelta, EngineSnapshot, EngineState } from '../domain/typing/types.js';
 import type { InputEngine } from '../features/typing/inputAdapter.js';
@@ -51,6 +54,8 @@ export interface DurableSessionResult {
   saved: boolean;
   alreadyCommitted: boolean;
   error: RepositoryError | null;
+  lessonEvaluation: LessonEvaluation | null;
+  highErrorKeys: string[];
 }
 
 export interface SessionCoordinatorSnapshot {
@@ -82,6 +87,8 @@ interface PendingDraft {
   slices: SessionDaySlice[];
   mistakes: MistakeBucket[];
   exposures: CharacterExposure[];
+  lessonEvaluation: LessonEvaluation | null;
+  highErrorKeys: string[];
 }
 
 interface OwnershipRepository {
@@ -375,7 +382,8 @@ export class SessionCoordinator implements InputEngine {
     });
     if (result.ok) {
       this.options.runtime.setPendingResult({ sessionId: checkpoint.sessionId, saved: true });
-      this.updateView('interrupted', { session, saved: true, alreadyCommitted: result.value.alreadyCommitted, error: null });
+      this.updateView('interrupted', { session, saved: true, alreadyCommitted: result.value.alreadyCommitted,
+        error: null, lessonEvaluation: null, highErrorKeys: [] });
     }
     return result;
   }
@@ -406,6 +414,15 @@ export class SessionCoordinator implements InputEngine {
       seed: snapshot.generationState,
     });
     const slices = buildDaySlices(session, [...this.days.values()].sort((left, right) => left.day.localeCompare(right.day)));
+    const lessonEvaluation = this.options.source.progressEvaluator?.evaluate(session, {
+      voluntarilyPaused: this.voluntarilyPaused,
+    }) ?? null;
+    const highErrorKeys = [...this.exposureCounts.entries()]
+      .filter(([, counts]) => counts.errors > 0)
+      .sort((left, right) => (right[1].errors / right[1].attempts) - (left[1].errors / left[1].attempts)
+        || right[1].errors - left[1].errors || left[0].localeCompare(right[0]))
+      .slice(0, 5)
+      .map(([expected]) => expected);
     this.pendingDraft = {
       session,
       slices,
@@ -423,10 +440,14 @@ export class SessionCoordinator implements InputEngine {
         attempts: counts.attempts,
         errors: counts.errors,
       })),
+      lessonEvaluation,
+      highErrorKeys,
     };
     this.options.runtime.setSession(this.sessionId, 'finalizing');
     this.options.runtime.setPendingResult({ sessionId: this.sessionId, saved: false });
-    this.updateView('finalizing', { session, saved: false, alreadyCommitted: false, error: null });
+    this.updateView('finalizing', {
+      session, saved: false, alreadyCommitted: false, error: null, lessonEvaluation, highErrorKeys,
+    });
     this.finalization = this.persistPending();
     return deltas;
   }
@@ -438,11 +459,14 @@ export class SessionCoordinator implements InputEngine {
     if (!this.pendingCommit) {
       const aggregates = await this.buildAggregateChanges(draft.session, draft.slices);
       if (!aggregates.ok) return this.handleSaveFailure(aggregates.error);
+      const lessonProgress = await this.buildLessonProgressChanges(draft.session, draft.lessonEvaluation);
+      if (!lessonProgress.ok) return this.handleSaveFailure(lessonProgress.error);
       this.pendingCommit = {
         session: draft.session,
         daySlices: draft.slices,
         mistakes: draft.mistakes,
         exposures: draft.exposures,
+        lessonProgress: lessonProgress.value.length > 0 ? lessonProgress.value : undefined,
         aggregateChanges: aggregates.value,
         updateProfileCharacterStats: true,
         removeCheckpointId: draft.session.id,
@@ -459,6 +483,8 @@ export class SessionCoordinator implements InputEngine {
       saved: true,
       alreadyCommitted: result.value.alreadyCommitted,
       error: null,
+      lessonEvaluation: draft.lessonEvaluation,
+      highErrorKeys: draft.highErrorKeys,
     });
     this.pendingCommit = null;
     this.pendingDraft = null;
@@ -484,6 +510,43 @@ export class SessionCoordinator implements InputEngine {
       changes.push(mergeDailyAggregate(row, session, slice));
     }
     return { ok: true as const, value: changes };
+  }
+
+  private async buildLessonProgressChanges(
+    session: SessionRecord,
+    evaluation: LessonEvaluation | null,
+  ): Promise<RepositoryResult<LessonProgress[]>> {
+    const evaluator = this.options.source.progressEvaluator;
+    if (!evaluator || !evaluation) return { ok: true, value: [] };
+    const loaded = await this.options.repository.getLessonProgress(session.profileId, session.config.contentVersion);
+    if (!loaded.ok) return loaded;
+    const existing = loaded.value.find((item) => item.lessonId === evaluator.lessonId);
+    const recent: SessionRecord[] = [];
+    let cursor: string | null = null;
+    do {
+      const page = await this.options.repository.querySessions({
+        profileId: session.profileId,
+        mode: 'lessons',
+        includeIneligible: true,
+        limit: 200,
+        cursor,
+      });
+      if (!page.ok) return page;
+      for (const item of page.value.sessions) {
+        if (item.id !== session.id && item.status === 'completed'
+          && item.config.sourceRef === evaluator.lessonId
+          && item.config.contentVersion === session.config.contentVersion) recent.push(item);
+        if (recent.length >= 3) break;
+      }
+      cursor = page.value.nextCursor;
+    } while (recent.length < 3 && cursor !== null);
+    return { ok: true, value: [deriveLessonProgress({
+      definition: evaluator.definition,
+      existing,
+      session,
+      evaluation,
+      recentCompletedSessions: recent,
+    })] };
   }
 
   private observe(command: EngineCommand, deltas: readonly EngineDelta[], snapshot: EngineSnapshot, wallMs: number): void {

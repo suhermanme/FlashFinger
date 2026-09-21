@@ -1,0 +1,142 @@
+{
+  "version": "ff-curriculum-v1",
+  "provenance": "Original FlashFinger curriculum drills authored for this project; no third-party exercise text.",
+  "migrations": [],
+  "lessons": [
+    {
+      "id": "ff-stage1-fj", "title": "F and J anchors", "stage": 1, "prerequisites": [],
+      "introducedKeys": ["f", "j"], "reviewKeys": [], "exercisePolicy": "new-key-drill", "targetLength": 120,
+      "newUnits": ["fj", "jf", "ff", "jj"], "reviewUnits": []
+    },
+    {
+      "id": "ff-stage1-dk", "title": "D and K", "stage": 1, "prerequisites": ["ff-stage1-fj"],
+      "introducedKeys": ["d", "k"], "reviewKeys": ["f", "j"], "exercisePolicy": "new-key-drill", "targetLength": 120,
+      "newUnits": ["dk", "kd", "dd", "kk"], "reviewUnits": ["fj", "jf", "ff", "jj"]
+    },
+    {
+      "id": "ff-stage1-sl", "title": "S and L", "stage": 1, "prerequisites": ["ff-stage1-dk"],
+      "introducedKeys": ["s", "l"], "reviewKeys": ["f", "j", "d", "k"], "exercisePolicy": "new-key-drill", "targetLength": 120,
+      "newUnits": ["sl", "ls", "ss", "ll"], "reviewUnits": ["fj", "jdk", "ff", "dk"]
+    },
+    {
+      "id": "ff-stage1-a-semicolon", "title": "A and semicolon", "stage": 1, "prerequisites": ["ff-stage1-sl"],
+      "introducedKeys": ["a", ";"], "reviewKeys": ["f", "j", "d", "k", "s", "l"], "exercisePolicy": "new-key-drill", "targetLength": 120,
+      "newUnits": ["a;", ";a", "aa", ";;"], "reviewUnits": ["sdf", "jkl", "fl", "dk"]
+    },
+    {
+      "id": "ff-stage1-home-review", "title": "Home row and spaces", "stage": 1, "prerequisites": ["ff-stage1-a-semicolon"],
+      "introducedKeys": [" "], "reviewKeys": ["a", "s", "d", "f", "j", "k", "l", ";"], "exercisePolicy": "mixed-review", "targetLength": 160,
+      "newUnits": ["a sad lad", "fall ask", "flask", "dad asks"], "reviewUnits": ["all", "salad", "lass", "flask"]
+    },
+
+    {
+      "id": "ff-stage2-gh", "title": "G and H reaches", "stage": 2, "prerequisites": ["ff-stage1-home-review"],
+      "introducedKeys": ["g", "h"], "reviewKeys": ["a", "s", "d", "f", "j", "k", "l", ";"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["gh", "hg", "gg", "hh"], "reviewUnits": ["fall", "ask", "sad", "flask"]
+    },
+    {
+      "id": "ff-stage2-home-words", "title": "Balanced home-row words", "stage": 2, "prerequisites": ["ff-stage2-gh"],
+      "introducedKeys": [], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";"], "exercisePolicy": "mixed-review", "targetLength": 240,
+      "newUnits": ["dash", "flash", "glass", "shall", "hash", "half"], "reviewUnits": ["salad", "asks", "falls", "flags"]
+    },
+
+    {
+      "id": "ff-stage3-ru", "title": "R and U", "stage": 3, "prerequisites": ["ff-stage2-home-words"],
+      "introducedKeys": ["r", "u"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["ru", "ur", "rr", "uu"], "reviewUnits": ["flash", "glass", "shall", "ask"]
+    },
+    {
+      "id": "ff-stage3-ei", "title": "E and I", "stage": 3, "prerequisites": ["ff-stage3-ru"],
+      "introducedKeys": ["e", "i"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "r", "u"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["ei", "ie", "ee", "ii"], "reviewUnits": ["rush", "guard", "hard", "usual"]
+    },
+    {
+      "id": "ff-stage3-wo", "title": "W and O", "stage": 3, "prerequisites": ["ff-stage3-ei"],
+      "introducedKeys": ["w", "o"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "r", "u", "e", "i"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["wo", "ow", "ww", "oo"], "reviewUnits": ["raise", "idea", "fire", "sure"]
+    },
+    {
+      "id": "ff-stage3-qp", "title": "Q and P", "stage": 3, "prerequisites": ["ff-stage3-wo"],
+      "introducedKeys": ["q", "p"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "r", "u", "e", "i", "w", "o"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["qp", "pq", "qq", "pp"], "reviewUnits": ["word", "slow", "row", "how"]
+    },
+    {
+      "id": "ff-stage3-ty", "title": "T and Y", "stage": 3, "prerequisites": ["ff-stage3-qp"],
+      "introducedKeys": ["t", "y"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "r", "u", "e", "i", "w", "o", "q", "p"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["ty", "yt", "tt", "yy"], "reviewUnits": ["quip", "pour", "power", "pair"]
+    },
+    {
+      "id": "ff-stage3-upper-review", "title": "Upper-row review", "stage": 3, "prerequisites": ["ff-stage3-ty"],
+      "introducedKeys": [], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p"], "exercisePolicy": "mixed-review", "targetLength": 280,
+      "newUnits": ["quiet", "writer", "power", "quality", "type", "story"], "reviewUnits": ["read", "write", "share", "ideas"]
+    },
+
+    {
+      "id": "ff-stage4-vm", "title": "V and M", "stage": 4, "prerequisites": ["ff-stage3-upper-review"],
+      "introducedKeys": ["v", "m"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["vm", "mv", "vv", "mm"], "reviewUnits": ["type", "quiet", "power", "story"]
+    },
+    {
+      "id": "ff-stage4-c-comma", "title": "C and comma", "stage": 4, "prerequisites": ["ff-stage4-vm"],
+      "introducedKeys": ["c", ","], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "v", "m"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["c,", ",c", "cc", ",,"], "reviewUnits": ["move", "view", "warm", "game"]
+    },
+    {
+      "id": "ff-stage4-x-period", "title": "X and period", "stage": 4, "prerequisites": ["ff-stage4-c-comma"],
+      "introducedKeys": ["x", "."], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "v", "m", "c", ","], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["x.", ".x", "xx", ".."], "reviewUnits": ["calm", "voice", "come", "care"]
+    },
+    {
+      "id": "ff-stage4-z-slash", "title": "Z and slash", "stage": 4, "prerequisites": ["ff-stage4-x-period"],
+      "introducedKeys": ["z", "/"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "v", "m", "c", ",", "x", "."], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["z/", "/z", "zz", "//"], "reviewUnits": ["extra", "text", "mix", "exact"]
+    },
+    {
+      "id": "ff-stage4-bn", "title": "B and N", "stage": 4, "prerequisites": ["ff-stage4-z-slash"],
+      "introducedKeys": ["b", "n"], "reviewKeys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "v", "m", "c", "x", "z"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["bn", "nb", "bb", "nn"], "reviewUnits": ["zero", "size", "fizz", "lazy"]
+    },
+    {
+      "id": "ff-stage4-letter-review", "title": "All-letter review", "stage": 4, "prerequisites": ["ff-stage4-bn"],
+      "introducedKeys": [], "reviewKeys": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], "exercisePolicy": "mixed-review", "targetLength": 300,
+      "newUnits": ["quick", "brown", "fox", "jumps", "vivid", "maze"], "reviewUnits": ["typing", "builds", "steady", "rhythm"]
+    },
+
+    {
+      "id": "ff-stage5-capitals-left", "title": "Left-hand capitals", "stage": 5, "prerequisites": ["ff-stage4-letter-review"],
+      "introducedKeys": ["Q", "W", "E", "R", "T", "A", "S", "D", "F", "G", "Z", "X", "C", "V", "B"], "reviewKeys": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["AS", "DF", "ER", "TV", "QW"], "reviewUnits": ["start", "draft", "great", "craft"]
+    },
+    {
+      "id": "ff-stage5-capitals-right", "title": "Right-hand capitals", "stage": 5, "prerequisites": ["ff-stage5-capitals-left"],
+      "introducedKeys": ["Y", "U", "I", "O", "P", "H", "J", "K", "L", "N", "M"], "reviewKeys": ["A", "S", "D", "F", "G", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["JK", "UI", "OP", "HM", "NY"], "reviewUnits": ["Fast", "Start", "Draft", "Great"]
+    },
+    {
+      "id": "ff-stage5-punctuation", "title": "Punctuation", "stage": 5, "prerequisites": ["ff-stage5-capitals-right"],
+      "introducedKeys": ["?", "!", "'", "\""], "reviewKeys": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["?!", "!?", "''", "\"\""], "reviewUnits": ["its", "why", "yes", "say"]
+    },
+    {
+      "id": "ff-stage5-digits-left", "title": "Digits 1 through 5", "stage": 5, "prerequisites": ["ff-stage5-punctuation"],
+      "introducedKeys": ["1", "2", "3", "4", "5"], "reviewKeys": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["123", "345", "152", "431"], "reviewUnits": ["room", "page", "step", "set"]
+    },
+    {
+      "id": "ff-stage5-digits-right", "title": "Digits 6 through 0", "stage": 5, "prerequisites": ["ff-stage5-digits-left"],
+      "introducedKeys": ["6", "7", "8", "9", "0"], "reviewKeys": ["1", "2", "3", "4", "5", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], "exercisePolicy": "new-key-drill", "targetLength": 240,
+      "newUnits": ["678", "890", "760", "986"], "reviewUnits": ["room 1", "page 2", "step 3", "set 4"]
+    },
+
+    {
+      "id": "ff-stage6-sentences", "title": "Sentence rhythm", "stage": 6, "prerequisites": ["ff-stage5-digits-right"],
+      "introducedKeys": [], "reviewKeys": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", ".", ",", "?", "!", "'"], "exercisePolicy": "prose", "targetLength": 320,
+      "newUnits": ["Calm hands build a steady rhythm.", "Quick practice makes each reach feel natural.", "Accuracy comes before speed!"], "reviewUnits": ["Type each sentence with care.", "Can you keep an even pace?", "Small gains add up."]
+    },
+    {
+      "id": "ff-stage6-mixed-prose", "title": "Mixed prose", "stage": 6, "prerequisites": ["ff-stage6-sentences"],
+      "introducedKeys": [], "reviewKeys": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", ".", ",", "?", "!", "'", ":", ";", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], "exercisePolicy": "prose", "targetLength": 400,
+      "newUnits": ["At 9, Mira wrote a clear plan: practice, pause, and review.", "The quick brown fox jumps over 2 lazy dogs.", "Good habits turn 10 minutes into lasting skill."], "reviewUnits": ["Accuracy first; speed follows with time.", "Keep your eyes on the text, not the keys.", "Ready for one more careful run?"]
+    }
+  ]
+}

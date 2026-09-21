@@ -1,9 +1,9 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-21T08:50:54Z` (UTC)
+Last updated: `2026-09-21T09:17:32Z` (UTC)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
-Repository state: M01–M10 are committed (`3450bc9` is the M06–M10 tranche); the completed M11 changes are present and uncommitted.
+Repository state: M01–M11 are committed (`83b5dbf` is M11); the completed M12 changes are present and uncommitted.
 
 ## Current status
 
@@ -18,8 +18,9 @@ Repository state: M01–M10 are committed (`3450bc9` is the M06–M10 tranche); 
 **M09 — Low-latency audio implementation/feasibility spike is complete; physical-output qualification remains open.**
 **M10 — Bounded feedback effects is complete.**
 **M11 — Session lifecycle and durable result integration is complete.**
+**M12 — Lessons slice is complete.**
 
-The next eligible prompts are M12 lessons, M13 practice, and M14 custom text.
+The next eligible prompts are M13 practice and M14 custom text.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -110,13 +111,24 @@ The coordinator freezes one prepared source/configuration, starts timing on the 
 
 Checkpoint schema v1 lacks exact completed-word and retained-error counters plus the original start instant. Recovery documents and applies conservative reconstruction; a future schema revision is needed for exact interrupted-session analytics.
 
+## Completed M12 outputs
+
+- Curriculum/generator: `src/domain/training/lessons.ts`
+- Qualification/progression: `src/domain/training/progression.ts`
+- Selection/results: `src/features/lessons/`
+- Versioned content: `public/content/lessons/ff-curriculum-v1.json`
+- Validation/progression tests: `tests/unit/curriculum.test.ts`
+- Durable flow/UI tests: `tests/integration/{lesson-flow.test.ts,lesson-screen.test.tsx}`
+
+The v1 catalog contains 26 lessons across stages 1–6 (5/2/6/6/5/2). It validates an acyclic prerequisite graph, minimum 120/240-grapheme targets, allowed keys, finger hints, and separated new/review exercise pools. Deterministic generation keeps introduced-key positions within 55–65% of the 60/40 drill target. The shared coordinator evaluates every lesson result with live pause context and includes the replacement progress row in the same idempotent durable commit. Two qualifying sessions among the latest three completed attempts award sticky mastery; old-version rows remain and explicit maps alone project unchanged lessons forward.
+
 ## Last verification
 
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test -- --reporter=dot` | 0 | 13/13 test files and 209/209 tests pass, including native headless-Chrome IndexedDB and M11 lifecycle/UI coverage. |
-| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 272.06 kB / 82.51 kB gzip and CSS is 17.02 kB / 4.44 kB gzip. |
+| `npm test -- --reporter=dot` | 0 | 16/16 test files and 219/219 tests pass, including native headless-Chrome IndexedDB and M12 curriculum/durable-flow/UI coverage. |
+| `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 272.06 kB / 82.51 kB gzip and CSS is 17.42 kB / 4.52 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
 | Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
 | Native Electron scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 4.50 ms. |
@@ -124,6 +136,8 @@ Checkpoint schema v1 lacks exact completed-word and retained-error counters plus
 | M05 suite with workspace `TMPDIR` (`ext2/ext3` reported by `stat`) | 0 | 20/20 tests pass, including all seven compaction cut points. |
 
 The initial sandboxed `npm test` attempt exited 1 with 144/145 passing because the native-browser test could not bind `127.0.0.1` (`listen EPERM`). Re-running the same full suite with loopback-port permission produced the passing result above. Tests and build emitted the existing non-failing Vite warning that `__dirname` is incompatible with the future native config loader default.
+
+During M12, one parallel verification attempt raced the full suite against Vite replacing `dist/renderer`; three M02 artifact-read tests failed while the other 216 passed. The sequential rerun after build completion passed all 219 tests.
 
 ## Known verification limits
 
@@ -137,4 +151,4 @@ The initial sandboxed `npm test` attempt exited 1 with 144/145 passing because t
 
 ## Next handover action
 
-Proceed with one of M12–M14. Supply its fixed `TrainingSource` to the M11 coordinator rather than adding another session lifecycle. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.
+Proceed with M13 or M14. Supply its `TrainingSource` to the M11 coordinator rather than adding another session lifecycle. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes. M16 remains responsible for replacing the explicit backup stubs with staged validated import/export.

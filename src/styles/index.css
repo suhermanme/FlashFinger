@@ -60,6 +60,11 @@ button, input, select, textarea { font: inherit; }
 .ff-session-metrics dt, .ff-result-metrics dt { color: var(--ff-text-muted); }
 .ff-session-metrics dd, .ff-result-metrics dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; }
 .ff-save-error { color: var(--ff-typing-error); text-decoration: underline currentColor; }
+.ff-lesson-list, .ff-criteria-list { display: grid; gap: var(--ff-space-3); padding-inline-start: var(--ff-space-5); }
+.ff-lesson-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--ff-space-4); }
+.ff-lesson-list p { margin-block: var(--ff-space-1) 0; }
+.ff-criteria-list li { display: grid; gap: var(--ff-space-1); }
+.ff-criteria-list li[data-met="false"] { color: var(--ff-typing-error); }
 
 @media (max-width: 40rem) { .ff-shell { padding: var(--ff-space-3); } .ff-card { padding: var(--ff-space-4); } .ff-nav-list { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }

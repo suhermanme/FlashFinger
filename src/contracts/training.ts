@@ -85,10 +85,17 @@ export interface LessonEvaluation {
   criteria: CriterionResult[];
 }
 
+export interface ProgressEvaluationContext {
+  /** Known during live finalization; omitted when evaluating legacy history. */
+  voluntarilyPaused?: boolean;
+}
+
 export interface ProgressEvaluator {
   lessonId: LessonId;
+  definition: LessonDefinition;
+  requiredQualifyingPasses?: number;
   /** Pure evaluation of a completed session against lesson gates. */
-  evaluate(session: SessionRecord): LessonEvaluation;
+  evaluate(session: SessionRecord, context?: ProgressEvaluationContext): LessonEvaluation;
 }
 
 // ---------------------------------------------------------------------------

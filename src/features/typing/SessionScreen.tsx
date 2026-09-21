@@ -11,9 +11,12 @@ export interface SessionScreenProps {
   feedback?: TypingFeedback;
   onRetrySession?(): void;
   onDiscardUnsaved?(): void;
+  nextLessonTitle?: string;
+  onNextLesson?(): void;
 }
 
-export function SessionScreen({ coordinator, sink, feedback, onRetrySession, onDiscardUnsaved }: SessionScreenProps) {
+export function SessionScreen({ coordinator, sink, feedback, onRetrySession, onDiscardUnsaved,
+  nextLessonTitle, onNextLesson }: SessionScreenProps) {
   const snapshot = useSyncExternalStore(coordinator.subscribe, coordinator.getSnapshot, coordinator.getSnapshot);
   useEffect(() => { void coordinator.prepare(); }, [coordinator]);
   const stableSink = useMemo(() => sink ?? { onCommit: () => undefined }, [sink]);
@@ -24,7 +27,7 @@ export function SessionScreen({ coordinator, sink, feedback, onRetrySession, onD
       onDiscardUnsaved={onDiscardUnsaved
         ? () => { void coordinator.discardUnsavedResult().then(onDiscardUnsaved); }
         : undefined}
-      onRetrySession={onRetrySession} />;
+      onRetrySession={onRetrySession} nextLessonTitle={nextLessonTitle} onNextLesson={onNextLesson} />;
   }
 
   const paused = snapshot.phase === 'paused';
