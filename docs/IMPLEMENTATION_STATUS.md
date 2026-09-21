@@ -309,14 +309,22 @@ Implemented the local service-worker shell, web manifest, deferred update activa
 
 Outputs: `public/sw.js`, `public/manifest.webmanifest`, `src/platform/web/offline.ts`, `src/contracts/backup.ts`, `src/features/settings/BackupSettings.tsx`, and `tests/unit/backup.test.ts`.
 
-## M06–M16 verification evidence
+### M17 — Cross-platform qualification and release artifacts
+
+Status: **complete with qualification blockers recorded**.
+
+Implemented release asset auditing, acceptance coverage for offline/content artifacts and relative deployment paths, bounded analytics qualification workload checks, a release checklist, and a performance report that separates synthetic scheduling evidence from unmeasured physical latency. No unavailable platform or physical-latency gate is marked passed.
+
+Outputs: `scripts/release-audit.mjs`, `tests/e2e/acceptance/`, `tests/performance/qualification/`, `docs/RELEASE_CHECKLIST.md`, and `docs/PERFORMANCE_REPORT.md`.
+
+## M06–M17 verification evidence
 
 Commands run on 2026-09-21 UTC:
 
 | Command | Exit | Outcome |
 |---|---:|---|
 | `npm run typecheck` | 0 | Application, Electron, and all test/harness TypeScript pass. |
-| `npm test -- --reporter=dot` | 0 | 22/22 files and 238/238 tests pass, including native Chrome IndexedDB and M12–M16 coverage. |
+| `npm test -- --reporter=dot` | 0 | 24/24 files and 241/241 tests pass, including native Chrome IndexedDB and M12–M17 coverage. |
 | `npm run build` | 0 | Renderer build passes: JS 280.68 kB / 85.25 kB gzip; CSS 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, and IPC compile. |
 | Native Chrome audio harness | 0 | 10,000 triggers; p99 0.20 ms, max 2.20 ms. |
@@ -330,4 +338,4 @@ Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. 
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-The next eligible prompt is **M17 — Cross-platform qualification and release artifacts**. It must report unsupported platforms and physical qualification limits explicitly.
+All scoped implementation prompts are complete. Remaining release blockers are listed in `docs/RELEASE_CHECKLIST.md`.

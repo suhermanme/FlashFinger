@@ -23,8 +23,9 @@ Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 
 **M14 — Custom-text slice is complete.**
 **M15 — Analytics slice is complete.**
 **M16 — Offline delivery and local backups is complete.**
+**M17 — Cross-platform qualification and release artifacts is complete with blockers recorded.**
 
-The next eligible prompt is M17 cross-platform qualification.
+All implementation prompts are complete; remaining work is external platform qualification.
 
 The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
@@ -151,7 +152,7 @@ Custom text accepts bounded UTF-8 and UTF-16 BOM input, rejects invalid/binary c
 | Command | Exit | Result |
 |---|---:|---|
 | `npm run typecheck` | 0 | All application, Electron, and test TypeScript configs pass with no errors. |
-| `npm test -- --reporter=dot` | 0 | 22/22 test files and 238/238 tests pass, including native headless-Chrome IndexedDB and M12–M16 coverage. |
+| `npm test -- --reporter=dot` | 0 | 24/24 test files and 241/241 tests pass, including native headless-Chrome IndexedDB and M12–M17 coverage. |
 | `npm run build` | 0 | TypeScript and Vite production build pass; renderer JS is 280.68 kB / 85.25 kB gzip and CSS is 18.13 kB / 4.66 kB gzip. |
 | `npm run electron:compile` | 0 | Main, preload, storage, IPC, and imported contracts compile to the Electron CommonJS output. |
 | Native Chrome scheduling harness | 0 | 10,000 decoded triggers: p99 0.20 ms, max 2.20 ms. |
@@ -175,4 +176,4 @@ During M13, the sandboxed full suite could not bind the native-Chrome loopback p
 
 ## Next handover action
 
-Proceed with M17 cross-platform qualification. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes.
+Proceed with external cross-platform qualification using `docs/RELEASE_CHECKLIST.md`. Desktop uses the main-owned journal/snapshot authority; browser uses IndexedDB; do not introduce dual writes.
