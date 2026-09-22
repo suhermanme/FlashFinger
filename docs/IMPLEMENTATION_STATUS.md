@@ -1,6 +1,8 @@
 # Implementation Status
 
-Last updated: `2026-09-21T16:56:40Z` (UTC)
+Last updated: `2026-09-22` (Asia/Jakarta)
+
+> **Audit correction:** The milestone sections below record module-level delivery and focused test evidence, but they do not establish complete production integration. A 2026-09-22 audit found that several delivered modules are not routed through the user-facing application and that backup, offline, desktop packaging, and other release-one behavior remains incomplete. See [`docs/IMPLEMENTATION_GAP_AUDIT.md`](./IMPLEMENTATION_GAP_AUDIT.md). Its findings supersede statements below that all scoped implementation work is complete.
 
 ## Completed prompts
 
@@ -338,4 +340,4 @@ Desktop uses the IPC-backed durable repository; browser remains IndexedDB-only. 
 
 Physical input-to-light/audio latency, production sound quality, non-Chromium browser behavior, cross-OS renderer/audio behavior, a one-hour memory plateau, and assistive-technology testing remain unqualified. The existing Vite warning about `__dirname` and the future native config loader remains non-failing.
 
-All scoped implementation prompts are complete. Remaining release blockers are listed in `docs/RELEASE_CHECKLIST.md`.
+Focused milestone outputs exist, but production integration is not complete. The implementation backlog and recommended order are recorded in `docs/IMPLEMENTATION_GAP_AUDIT.md`; external qualification blockers remain listed in `docs/RELEASE_CHECKLIST.md`.

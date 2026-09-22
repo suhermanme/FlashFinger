@@ -1,9 +1,9 @@
 # WORK_STATE — Recovery Checkpoint
 
-Last updated: `2026-09-21T17:00:40Z` (UTC)
+Last updated: `2026-09-22` (Asia/Jakarta)
 Workspace: `/home/medys/WORKSPACE/FlashFinger`
 Branch: `master`
-Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 changes are present and uncommitted.
+Audited revision: `ac164eb`
 
 ## Current status
 
@@ -25,9 +25,9 @@ Repository state: M01–M12 are committed (`99b5327` is M12); the completed M13 
 **M16 — Offline delivery and local backups is complete.**
 **M17 — Cross-platform qualification and release artifacts is complete with blockers recorded.**
 
-All implementation prompts are complete; remaining work is external platform qualification.
+The milestone modules and focused tests are present, but production integration is not complete. The 2026-09-22 audit found active application paths that bypass the shared session stack, unsupported repository backup operations, partial custom-text/analytics/settings/offline behavior, and missing desktop packaging. See `docs/IMPLEMENTATION_GAP_AUDIT.md` for the evidence-backed backlog. External qualification is also still required.
 
-The authoritative completion record is `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
+The authoritative current gap record is `docs/IMPLEMENTATION_GAP_AUDIT.md`; historical milestone evidence is in `docs/IMPLEMENTATION_STATUS.md`; design choices are in `docs/DECISIONS.md`; detailed M01 evidence is in `docs/tasks/M01.md`, M02 in `docs/tasks/M02.md`, M03 in `docs/tasks/M03.md`.
 
 ## Completed M01 outputs
 
