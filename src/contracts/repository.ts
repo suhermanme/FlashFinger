@@ -215,6 +215,8 @@ export interface Repository {
   rebuildAggregates(profileId: ProfileId): Promise<RepositoryResult<void>>;
   getCharacterStats(profileId: ProfileId): Promise<RepositoryResult<CharacterStatTotals>>;
   rebuildCharacterStats(profileId: ProfileId): Promise<RepositoryResult<void>>;
+  /** Permanently clears source mistake/exposure rows and their derived character totals. */
+  resetCharacterStats(profileId: ProfileId): Promise<RepositoryResult<void>>;
 
   // checkpoints -----------------------------------------------------------
   saveCheckpoint(checkpoint: ActiveCheckpoint): Promise<RepositoryResult<void>>;

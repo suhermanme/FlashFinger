@@ -115,6 +115,21 @@ describe('M05 desktop journal durability and replay', () => {
     });
   });
 
+  it('durably resets character analytics without deleting completed sessions', async () => {
+    const directory = await temporaryDirectory();
+    const repository = await repositoryWithProfile(directory);
+    await repository.commitSession(finalizedCommit());
+
+    expect(await repository.resetCharacterStats(PROFILE_A_ID)).toEqual({ ok: true, value: undefined });
+    expect(await repository.getCharacterStats(PROFILE_A_ID)).toEqual({ ok: true, value: { exposures: [], mistakes: [] } });
+    expect(await repository.getSession(COMPLETED_SESSION_ID)).toMatchObject({ ok: true, value: { id: COMPLETED_SESSION_ID } });
+    expect(await repository.rebuildCharacterStats(PROFILE_A_ID)).toEqual({ ok: true, value: undefined });
+
+    const reopened = new DesktopRepository({ rootDirectory: directory, compactAfterRecords: 0 });
+    expect(await reopened.initialize()).toEqual({ ok: true, value: undefined });
+    expect(await reopened.getCharacterStats(PROFILE_A_ID)).toEqual({ ok: true, value: { exposures: [], mistakes: [] } });
+  });
+
   it('does not expose or acknowledge a mutation before the injected durable append boundary resolves', async () => {
     const directory = await temporaryDirectory();
     let release!: () => void;

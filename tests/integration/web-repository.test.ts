@@ -282,6 +282,21 @@ describe('M04 IndexedDB finalized-session transaction', () => {
       value: [{ attempts: 300, eligibleSessionCount: 1 }],
     });
   });
+
+  it('resets character analytics without deleting completed sessions', async () => {
+    const repository = makeRepository();
+    await repository.initialize();
+    const profile = await createFixtureProfile(repository);
+    const session = { ...completedSession, profileId: profile.id };
+    await repository.commitSession(fullCommit(session));
+
+    expect(await repository.resetCharacterStats(profile.id)).toEqual({ ok: true, value: undefined });
+    expect(await repository.getCharacterStats(profile.id)).toEqual({ ok: true, value: { exposures: [], mistakes: [] } });
+    expect(await repository.getSession(session.id)).toMatchObject({ ok: true, value: { id: session.id } });
+
+    expect(await repository.rebuildCharacterStats(profile.id)).toEqual({ ok: true, value: undefined });
+    expect(await repository.getCharacterStats(profile.id)).toEqual({ ok: true, value: { exposures: [], mistakes: [] } });
+  });
 });
 
 describe('M04 profile isolation and deletion', () => {

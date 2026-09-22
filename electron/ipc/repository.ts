@@ -92,6 +92,7 @@ async function dispatch(repository: Repository, request: BridgeInvokeRequest): P
     case 'repo.rebuildAggregates': return repository.rebuildAggregates(stringArg(argsFor(request, 1)[0], 'profileId'));
     case 'repo.getCharacterStats': return repository.getCharacterStats(stringArg(argsFor(request, 1)[0], 'profileId'));
     case 'repo.rebuildCharacterStats': return repository.rebuildCharacterStats(stringArg(argsFor(request, 1)[0], 'profileId'));
+    case 'repo.resetCharacterStats': return repository.resetCharacterStats(stringArg(argsFor(request, 1)[0], 'profileId'));
     case 'repo.saveCheckpoint': return repository.saveCheckpoint(argsFor(request, 1)[0] as Parameters<Repository['saveCheckpoint']>[0]);
     case 'repo.getCheckpoint': return repository.getCheckpoint(stringArg(argsFor(request, 1)[0], 'sessionId'));
     case 'repo.findLatestCheckpoint': return repository.findLatestCheckpoint(stringArg(argsFor(request, 1)[0], 'profileId'));

@@ -92,7 +92,7 @@ describe('M02 — Mock repository', () => {
     'loadInstallationSettings', 'saveInstallationSettings',
     'querySessions', 'getSession', 'commitSession', 'getSessionSeries',
     'getLessonProgress', 'getDailyAggregates', 'rebuildAggregates',
-    'getCharacterStats', 'rebuildCharacterStats',
+    'getCharacterStats', 'rebuildCharacterStats', 'resetCharacterStats',
     'saveCheckpoint', 'getCheckpoint', 'findLatestCheckpoint', 'deleteCheckpoint',
     'saveDocument', 'getDocument', 'listDocuments', 'getDocumentChunks', 'deleteDocument',
     'exportBackup', 'importBackup',

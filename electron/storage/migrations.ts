@@ -67,6 +67,7 @@ export type DesktopMutation =
   | { kind: 'commit-session'; commit: SessionCommit }
   | { kind: 'replace-aggregates'; profileId: string; rows: DailyAggregate[] }
   | { kind: 'replace-character-stats'; profileId: string; rows: CharacterStatRow[] }
+  | { kind: 'reset-character-stats'; profileId: string }
   | { kind: 'save-checkpoint'; checkpoint: ActiveCheckpoint }
   | { kind: 'delete-checkpoint'; sessionId: string }
   | { kind: 'save-document'; document: CustomDocument; chunks: DocumentChunk[] }

@@ -78,6 +78,8 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
   const paceState = typed.length === 0 || elapsedMs < 1_000 ? 'warming' : wpm >= paceGuideWpm ? 'ahead' : wpm >= paceGuideWpm * .85 ? 'close' : 'behind';
   const paceStyle = { '--ff-pace-progress': `${Math.max(1, progressRatio * 100)}%` } as CSSProperties;
   const topMistakes = useMemo(() => [...mistakes.current.values()].sort((left, right) => right.count - left.count).slice(0, 5), [done]);
+  const topMistakeCount = topMistakes[0]?.count ?? 1;
+  const totalMistakes = [...mistakes.current.values()].reduce((total, mistake) => total + mistake.count, 0);
   useEffect(() => {
     inputRef.current?.focus();
     const timer = window.setInterval(() => {
@@ -234,7 +236,16 @@ export function PracticeSession({ prepared, onExit, showKeyboard = true, soundEn
       <h3 id="practice-finish-heading">Session complete</h3>
       <p id="practice-finish-copy">Nice work. Here is how this run turned out.</p>
       <div className="ff-result-summary"><div><strong>{wpm}</strong><small>WPM</small></div><div><strong>{accuracy}%</strong><small>Accuracy</small></div><div><strong>{correct}</strong><small>Correct keys</small></div><div><strong>{Math.round(elapsedMs / 1_000)}s</strong><small>Active time</small></div></div>
-      {topMistakes.length > 0 ? <section className="ff-mistake-report" aria-labelledby="practice-mistakes-heading"><h4 id="practice-mistakes-heading">Characters to review</h4><p>Your most frequent mistakes in this session.</p><ul>{topMistakes.map((mistake) => <li key={`${mistake.expected}-${mistake.attempted}`}><strong>{mistake.expected === ' ' ? 'Space' : mistake.expected}</strong><span>typed “{mistake.attempted}”</span><b>{mistake.count}×</b></li>)}</ul></section> : null}
+      {topMistakes.length > 0 ? <section className="ff-mistake-report" aria-labelledby="practice-mistakes-heading">
+        <div className="ff-mistake-heading"><div><span className="ff-mistake-kicker">Mistake patterns</span><h4 id="practice-mistakes-heading">Characters to review</h4><p>Focus on these key pairs in your next run.</p></div><span className="ff-mistake-total"><strong>{totalMistakes}</strong> total</span></div>
+        <ol className="ff-mistake-breakdown">{topMistakes.map((mistake, index) => <li key={`${mistake.expected}-${mistake.attempted}`}>
+          <span className="ff-mistake-rank" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          <kbd className="ff-mistake-character" aria-label={mistake.expected === ' ' ? 'Space' : undefined}>{mistake.expected === ' ' ? 'SPC' : mistake.expected}</kbd>
+          <span className="ff-mistake-detail"><span>Expected</span><strong>{mistake.expected === ' ' ? 'Space' : `“${mistake.expected}”`} <i aria-hidden="true">→</i> {mistake.attempted === ' ' ? 'Space' : `“${mistake.attempted}”`}</strong></span>
+          <span className="ff-mistake-count"><strong>{mistake.count}</strong><span>{mistake.count === 1 ? 'time' : 'times'}</span></span>
+          <span className="ff-mistake-meter" aria-hidden="true"><span style={{ width: `${100 * mistake.count / topMistakeCount}%` }} /></span>
+        </li>)}</ol>
+      </section> : null}
       <div className="ff-finish-actions"><button className="ff-button" data-variant="primary" type="button" onClick={onRestart ?? restart}>Try again</button><button className="ff-button" type="button" onClick={onExit}>Back to setup</button></div>
       <p className={`ff-save-status${saveState === 'failed' ? ' ff-save-error' : ''}`} role="status">{!profileName ? 'Create or select a profile before practicing to save history.' : saveState === 'saving' ? `Saving to ${profileName}…` : saveState === 'saved' ? `Saved to ${profileName}.` : saveState === 'failed' ? 'The result could not be saved.' : ''}</p>
     </section> : <>

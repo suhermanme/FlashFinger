@@ -884,6 +884,33 @@ export class IndexedDbRepository implements Repository {
     });
   }
 
+  async resetCharacterStats(profileId: ProfileId): Promise<RepositoryResult<void>> {
+    return attempt(async () => {
+      await withTransaction(
+        this.requireDatabase(),
+        [STORES.profiles, STORES.sessionExposures, STORES.sessionMistakes, STORES.profileCharacterStats],
+        'readwrite',
+        async (transaction) => {
+          if (!(await getOne<Profile>(transaction.objectStore(STORES.profiles), profileId))) {
+            failure('not-found', `Profile not found: ${profileId}`);
+          }
+          await deleteByCursor(
+            transaction.objectStore(STORES.sessionExposures).index('byProfileSession'),
+            prefixRange([profileId]),
+          );
+          await deleteByCursor(
+            transaction.objectStore(STORES.sessionMistakes).index('byProfileSession'),
+            prefixRange([profileId]),
+          );
+          await deleteByCursor(
+            transaction.objectStore(STORES.profileCharacterStats).index('byProfile'),
+            IDBKeyRange.only(profileId),
+          );
+        },
+      );
+    });
+  }
+
   async acquireSessionOwnership(profileId: ProfileId): Promise<RepositoryResult<OwnershipToken>> {
     return attempt(async () => {
       const database = this.requireDatabase();

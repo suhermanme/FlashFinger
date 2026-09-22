@@ -63,6 +63,7 @@ export class DesktopRepositoryAdapter implements Repository {
   rebuildAggregates = (profileId: ProfileId) => this.invoke<void>('repo.rebuildAggregates', [profileId]);
   getCharacterStats = (profileId: ProfileId) => this.invoke<Awaited<ReturnType<Repository['getCharacterStats']>> extends RepositoryResult<infer T> ? T : never>('repo.getCharacterStats', [profileId]);
   rebuildCharacterStats = (profileId: ProfileId) => this.invoke<void>('repo.rebuildCharacterStats', [profileId]);
+  resetCharacterStats = (profileId: ProfileId) => this.invoke<void>('repo.resetCharacterStats', [profileId]);
   saveCheckpoint = (checkpoint: ActiveCheckpoint) => this.invoke<void>('repo.saveCheckpoint', [checkpoint]);
   getCheckpoint = (sessionId: SessionId) => this.invoke<ActiveCheckpoint | null>('repo.getCheckpoint', [sessionId]);
   findLatestCheckpoint = (profileId: ProfileId) => this.invoke<ActiveCheckpoint | null>('repo.findLatestCheckpoint', [profileId]);

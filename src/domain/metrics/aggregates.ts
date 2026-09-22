@@ -1,5 +1,6 @@
 import type { SessionRecord } from '../../contracts/models.js';
 import { calculateMetrics } from './formulas.js';
+import { calendarDayAt } from './sessionSummary.js';
 
 export interface HistoricalBar { day: string; sessions: number; activeMs: number; adjustedWpm: number | null; accuracy: number | null; modes: string[]; }
 export interface AggregateOptions { from?: string; to?: string; modes?: readonly string[]; }
@@ -9,7 +10,7 @@ export function aggregateSessions(sessions: readonly SessionRecord[], options: A
   const map = new Map<string, SessionRecord[]>();
   for (const session of sessions) {
     if (modeSet && !modeSet.has(session.config.mode)) continue;
-    const day = session.endedAt.slice(0, 10);
+    const day = calendarDayAt(Date.parse(session.endedAt), session.analyticsZone);
     if (options.from && day < options.from || options.to && day > options.to) continue;
     const rows = map.get(day) ?? []; rows.push(session); map.set(day, rows);
   }

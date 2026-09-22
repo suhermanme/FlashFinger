@@ -227,6 +227,11 @@ function applyMutation(state: DesktopRepositoryState, mutation: DesktopMutation)
     case 'replace-character-stats':
       state.profileCharacterStats = state.profileCharacterStats.filter((item) => item.profileId !== mutation.profileId).concat(mutation.rows);
       return;
+    case 'reset-character-stats':
+      state.sessionMistakes = state.sessionMistakes.filter((item) => item.profileId !== mutation.profileId);
+      state.sessionExposures = state.sessionExposures.filter((item) => item.profileId !== mutation.profileId);
+      state.profileCharacterStats = state.profileCharacterStats.filter((item) => item.profileId !== mutation.profileId);
+      return;
     case 'save-checkpoint': replaceByKey(state.checkpoints, mutation.checkpoint, (item) => item.sessionId); return;
     case 'delete-checkpoint': state.checkpoints = state.checkpoints.filter((item) => item.sessionId !== mutation.sessionId); return;
     case 'save-document':
@@ -613,6 +618,14 @@ export class DesktopRepository implements Repository {
       updateCharacterRows(temporary, state.sessionExposures.filter((item) => item.profileId === profileId),
         state.sessionMistakes.filter((item) => item.profileId === profileId));
       await this.persist({ kind: 'replace-character-stats', profileId, rows: temporary.profileCharacterStats });
+    });
+  }
+
+  async resetCharacterStats(profileId: ProfileId): Promise<RepositoryResult<void>> {
+    return attempt(async () => {
+      const state = this.requireState();
+      if (!state.profiles.some((item) => item.id === profileId)) failure('not-found', `Profile not found: ${profileId}`);
+      await this.persist({ kind: 'reset-character-stats', profileId });
     });
   }
 

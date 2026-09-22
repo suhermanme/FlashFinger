@@ -9,5 +9,15 @@ const session = (day: string, mode: 'practice' | 'custom' = 'practice', activeMs
 describe('analytics', () => {
   it('weights rolling bursts and caps old points', () => { const result = sampleRolling([{ atMs: 1000, activeMs: 1000, attempts: 10, correctAttempts: 8 }, { atMs: 4000, activeMs: 1000, attempts: 10, correctAttempts: 10 }], 5000, 5000); expect(result.attempts).toBe(20); expect(result.accuracy).toBe(90); expect(result.wpm).toBe(108); });
   it('aggregates modes and produces fixed calendar buckets', () => { const rows = aggregateSessions([session('2026-01-01'), session('2026-01-01', 'custom'), session('2026-01-02')], { modes: ['practice'] }); expect(rows).toHaveLength(2); const calendar = calendarDays(rows, '2026-01-01', '2026-01-04'); expect(calendar).toHaveLength(4); expect(longestStreak(calendar)).toBe(2); expect(prepareAnalyticsPayload([session('2026-01-01')], '2026-01-01', '2026-01-01').bars).toHaveLength(1); });
+  it('groups sessions by the captured analytics zone instead of their UTC date', () => {
+    const jakartaSession = {
+      ...session('2026-09-21'),
+      endedAt: '2026-09-21T17:30:00.000Z',
+      analyticsZone: 'Asia/Jakarta',
+    };
+    expect(aggregateSessions([jakartaSession])).toMatchObject([{ day: '2026-09-22', sessions: 1 }]);
+    expect(aggregateSessions([jakartaSession], { from: '2026-09-22', to: '2026-09-22' })).toHaveLength(1);
+    expect(aggregateSessions([jakartaSession], { from: '2026-09-21', to: '2026-09-21' })).toHaveLength(0);
+  });
   it('handles zero-denominator rolling and sparse activity', () => { expect(sampleRolling([], 1000)).toMatchObject({ wpm: null, accuracy: null }); expect(calendarDays([], '2026-02-01', '2026-02-01')[0].level).toBe(0); });
 });

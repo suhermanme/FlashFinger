@@ -46,6 +46,7 @@ function createBridge (): FfBridge {
       'repo.rebuildAggregates',
       'repo.getCharacterStats',
       'repo.rebuildCharacterStats',
+      'repo.resetCharacterStats',
       'repo.saveCheckpoint',
       'repo.getCheckpoint',
       'repo.findLatestCheckpoint',

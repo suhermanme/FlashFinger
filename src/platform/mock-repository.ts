@@ -93,6 +93,7 @@ export function createMockRepository (): Repository {
     rebuildAggregates: () => Promise.resolve(unavailable),
     getCharacterStats: () => Promise.resolve(unavailable),
     rebuildCharacterStats: () => Promise.resolve(unavailable),
+    resetCharacterStats: () => Promise.resolve(unavailable),
 
     // checkpoints -------------------------------------------------------
     saveCheckpoint: () => Promise.resolve(unavailable),

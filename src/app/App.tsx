@@ -134,6 +134,13 @@ export function App(): ReactNode {
     setHistoryRevision((value) => value + 1);
     return true;
   };
+  const resetCharacterStats = async (): Promise<boolean> => {
+    if (!activeProfile) return false;
+    const reset = await profileSystem.repository.resetCharacterStats(activeProfile.id);
+    if (!reset.ok) { setLoadError(reset.error.message); return false; }
+    setCharacterStats({ exposures: [], mistakes: [] });
+    return true;
+  };
   const loadCustomFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; event.target.value = '';
     if (!file) return;
@@ -162,7 +169,8 @@ export function App(): ReactNode {
       <button className={`ff-profile-chip${view === 'profiles' ? ' ff-profile-chip-active' : ''}`} type="button" onClick={() => selectView('profiles')}><span className="ff-profile-avatar">{activeProfile?.name.slice(0, 1).toUpperCase() ?? '+'}</span><span><strong>{activeProfile?.name ?? 'Create profile'}</strong><small>{activeProfile ? 'Local profile' : 'Set up your workspace'}</small></span><span aria-hidden="true">›</span></button>
       <div className="ff-sidebar-group"><span className="ff-sidebar-label">TRAIN</span><NavButton active={view === 'practice'} onClick={() => selectView('practice')}>⌨ Practice</NavButton><NavButton active={view === 'lessons'} onClick={() => selectView('lessons')}>▦ Lessons</NavButton><button className="ff-sidebar-link" type="button" onClick={() => fileInputRef.current?.click()}>＋ Load text file</button><input ref={fileInputRef} className="ff-file-input" type="file" accept=".txt,text/plain" onChange={(event) => void loadCustomFile(event)} /></div>
       <div className="ff-sidebar-group"><span className="ff-sidebar-label">REVIEW</span><NavButton active={view === 'history'} onClick={() => selectView('history')}>◒ History</NavButton><NavButton active={view === 'analytics'} onClick={() => selectView('analytics')}>⌁ Analytics</NavButton></div>
-      <div className="ff-sidebar-spacer" /><div className="ff-sidebar-footer"><NavButton active={view === 'settings'} onClick={() => selectView('settings')}>⚙ Settings</NavButton></div>
+      <div className="ff-sidebar-group ff-sidebar-settings"><NavButton active={view === 'settings'} onClick={() => selectView('settings')}>⚙ Settings</NavButton></div>
+      <div className="ff-sidebar-spacer" />
     </aside>
     <main id="main-content" className="ff-main-panel" tabIndex={-1}>
       <header className="ff-window-toolbar"><div><span className="ff-toolbar-title">{title}</span><span className="ff-toolbar-subtitle">{practice?.source.title ?? subtitle(view)}</span></div><div className="ff-toolbar-actions"><button className="ff-icon-button" aria-label={soundEnabled ? 'Mute sounds' : 'Turn sounds on'} aria-pressed={!soundEnabled} onClick={() => setSoundEnabled((value) => !value)}>{soundEnabled ? '♫' : '♪̸'}</button><button className="ff-icon-button" aria-label={`Use ${theme === 'light' ? 'dark' : 'light'} theme`} onClick={() => setTheme((value) => value === 'light' ? 'dark' : 'light')}>{theme === 'light' ? '◐' : '☀'}</button></div></header>
@@ -170,8 +178,8 @@ export function App(): ReactNode {
       {practice ? <PracticeSession key={practiceKey} prepared={practice} showKeyboard={showKeyboard} soundEnabled={soundEnabled} soundProfile={soundProfile} soundVolume={soundVolume} paceGuideWpm={paceGuide.wpm} paceGuideLabel={paceGuide.label} profileName={activeProfile?.name ?? null} onComplete={activeProfile ? (result) => savePractice(practice, result) : undefined} onRestart={practiceConfig ? retryPractice : undefined} onExit={() => { setPractice(null); setPracticeConfig(null); setView('practice'); }} /> : null}
       {!practice && view === 'practice' ? manifest ? <PracticeSetup manifest={manifest} initialConfig={defaults} onStart={startPractice} /> : <p role="status">Loading local practice dictionary…</p> : null}
       {!practice && view === 'lessons' ? catalog ? <LessonSelection lessons={buildLessonAvailability(catalog.curriculum, lessonProgress)} onSelect={startLesson} /> : <p role="status">Loading lessons…</p> : null}
-      {!practice && view === 'history' ? <HistoryDashboard bars={historyBars} calendar={historyCalendar} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} /> : null}
-      {!practice && view === 'analytics' ? <AnalyticsDashboard sessions={historySessions} bars={historyBars} characterStats={characterStats} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} /> : null}
+      {!practice && view === 'history' ? <HistoryDashboard bars={historyBars} calendar={historyCalendar} sessions={historySessions} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} /> : null}
+      {!practice && view === 'analytics' ? <AnalyticsDashboard sessions={historySessions} bars={historyBars} characterStats={characterStats} hasProfile={activeProfile !== null} loading={historyState === 'loading'} error={historyError} onResetCharacterStats={resetCharacterStats} /> : null}
       {!practice && view === 'profiles' ? <ProfileManager coordinator={profileSystem.coordinator} profilesStore={profileSystem.stores.profiles} defaultSettings={defaultProfileSettings} /> : null}
       {!practice && view === 'settings' ? <Settings theme={theme} setTheme={setTheme} fontSize={fontSize} setFontSize={setFontSize} showKeyboard={showKeyboard} setShowKeyboard={setShowKeyboard} soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} soundProfile={soundProfile} setSoundProfile={setSoundProfile} soundVolume={soundVolume} setSoundVolume={setSoundVolume} paceGuideMode={paceGuideMode} setPaceGuideMode={setPaceGuideMode} targetWpm={targetWpm} setTargetWpm={setTargetWpm} /> : null}
     </main>
